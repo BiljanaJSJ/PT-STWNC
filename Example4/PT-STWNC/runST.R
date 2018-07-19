@@ -26,9 +26,8 @@ set.seed(2555)
 #niter = 35000
 t1=proc.time()[1:3]
 y=data$CO2[1:206]
-load('random_state_410000.RData')
 p=4
-out_ls=runST(niter = 600000,y=y,p=p,M=5,nstops=20,kp1=c(1,1,1),kptau=1,pickup='ST410000.RData',
+out_ls=runST(niter = 455000,y=y,p=p,M=5,nstops=20,kp1=c(1,1,1),kptau=1,
               q1=0.02,q2=0.05, hyperpars=c(rep(10,3),rep(0.05,2)),tunetau=0.1,  x=generateInput(y,p))
 
 
