@@ -1,0 +1,2 @@
+StochApprox1.R                - run the Parallel Adaptive Wang Landau algorythm
+result_adapt_500.RData        - stored results from the run

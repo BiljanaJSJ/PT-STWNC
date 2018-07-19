@@ -1,0 +1,16 @@
+Brief descriptions of the files included in this directory:
+
+Eyam_time_SIR.csv               - Eyam vilage plague data
+SIR_ST.R                        - main functions used to run the algorithm by runST.R
+SIR_ST_functions.R              - help functions used to run the algorithm by runST.R           
+runST.R                         - run the algorithm
+ST35000.RData                   - samples obtained after running the algorithm 
+
+
+
+pairsplot.R                     - generate plots
+pairs2_function.R               - help function for generating plots
+
+
+
+
