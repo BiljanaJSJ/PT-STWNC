@@ -164,7 +164,7 @@ STstep_pars = function(pars,tau,y=y,log_r_bot=NA,acc=accepts,
     
    #propose sigma2 from lognormal
 
-    delta           = rnorm(1,0,ttune_pars[2])
+    delta           = rnorm(1,0,tune_pars[2])
     logsig_prop     = log(abs(pars[2]))+delta
     sig_prop        = exp(logsig_prop)
 
@@ -177,7 +177,7 @@ STstep_pars = function(pars,tau,y=y,log_r_bot=NA,acc=accepts,
    
    
    #calculate alpha
-   alpha_sig = log_r_top_sig - log_r_bot_sig +dlnorm(sig_prop,log(pars[2]),ttune_pars[2],log=T)-dlnorm(pars[2],logsig_prop,ttune_pars[2],log=T)
+   alpha_sig = log_r_top_sig - log_r_bot_sig +dlnorm(sig_prop,log(pars[2]),tune_pars[2],log=T)-dlnorm(pars[2],logsig_prop,tune_pars[2],log=T)
    # make a decision
    
    if (all(!is.na(alpha_sig) , runif(1) < exp(alpha_sig))){
@@ -357,25 +357,48 @@ OptimizePars <- function(y,tau_prop,pars,PriorPars,parAdd=NULL,cl=NULL){
 	n=length(y)
 	y_bar           = mean(y)
 	
-	mu_prop         = n*y_bar*((tau_prop*PriorPars[2]^2)/(n*tau_prop*PriorPars[2]^2+pars[2]))
+	N=10000
+	mu_prop=mu_it=rep(NA,N)
+	max_sigma2_prop=max_sigma2_it=rep(NA,N)
+	mu_prop[1]=mu_it[1]=pars[1]
+	max_sigma2_prop[1]=max_sigma2_it[1]=pars[2]
+	post_prop=post_it=rep(NA,N)
+	post_prop[1]=post_it[1]=0
+	
+	
+	
+	eps=10^-2
+	for (i in (2:N)){
+		
+	mu_prop[i]      = n*y_bar*((tau_prop*PriorPars[2]^2)/(n*tau_prop*PriorPars[2]^2+max_sigma2_prop[i-1]))
 	#maximize mean from the posterior mean at current tau
-	mu_it           = n*y_bar*((pars[3]*PriorPars[2]^2)/(n*pars[3]*PriorPars[2]^2+pars[2]))
+	mu_it[i]        = n*y_bar*((pars[3]*PriorPars[2]^2)/(n*pars[3]*PriorPars[2]^2+max_sigma2_it[i-1]))
 	
 	#maximize the sigma2 from the posterior mode at tau_prop
-	SSE             = SSEfun(y,mu_prop) 
-	d0_prop         = n*tau_prop/2+PriorPars[3]
-	v0_prop         = tau_prop*SSE/2+PriorPars[4]
-	max_sigma2_prop = v0_prop/(d0_prop+1)
+	SSE                = SSEfun(y,mu_prop[i]) 
+	d0_prop            = n*tau_prop/2+PriorPars[3]
+	v0_prop            = tau_prop*SSE/2+PriorPars[4]
+	max_sigma2_prop[i] = v0_prop/(d0_prop+1)
 	
-	SSE             = SSEfun(y,mu_it) 
+	SSE                = SSEfun(y,mu_it[i]) 
 	#maximize the sigma2 from the posterior mode at current tau
-	d0              = n*pars[3]/2+PriorPars[3]
-	v0              = pars[3]*SSE/2+PriorPars[4]
-	max_sigma2_it   = v0/(d0+1)
+	d0                 = n*pars[3]/2+PriorPars[3]
+	v0                 = pars[3]*SSE/2+PriorPars[4]
+	max_sigma2_it[i]   = v0/(d0+1)
 	
+	post_prop[i]  =  posterior_notau(y=y,pars=c(mu_prop[i],max_sigma2_prop[i]),tau=tau_prop,log=T,PriorPars=PriorPars)$output
+	post_it[i]    =  posterior_notau(y=y,pars=c(mu_it[i],max_sigma2_it[i]),tau=pars[3],log=T,PriorPars=PriorPars)$output
+	#check if the relative error is smaller than the tolerance eps
+	if (!(i==1)){
+		if ((is.nan(post_prop[i])) || (is.nan(post_it[i])) || (is.nan(post_prop[i-1])) || (is.nan(post_it[i-1]))) break
+		if (( (post_prop[i]-post_prop[i-1])/post_prop[i]<eps) & ( (post_it[i]-post_it[i-1])/post_it[i]<eps)) {
+			break}
+		
+	}
+	}
 	
-	return(list(max_prop=c(mu_prop,max_sigma2_prop), 
-							max_it=c(mu_it,max_sigma2_it)))
+	return(list(max_prop=c(mu_prop[i],max_sigma2_prop[i]), 
+							max_it=c(mu_it[i],max_sigma2_it[i])))
 	
 }
 
