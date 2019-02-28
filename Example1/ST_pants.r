@@ -86,9 +86,9 @@ loglik=function(x,pars,tau,log=T,parAdd=NULL){
       out=tau*sum(dnorm(x,mean=abs(pars[1]),sd=sqrt(pars[2]),log=log))
 
     }else{
-      out=(prod(dnorm(x,mean=abs(pars[1]),sd=(pars[2]),log=log))^tau)
+      out=(prod(dnorm(x,mean=abs(pars[1]),sd=sqrt(pars[2]),log=log))^tau)
     }
-    mllik=sum(dnorm(x,mean=abs(pars[1]),sd=pars[2],log=log)) 
+    mllik=sum(dnorm(x,mean=abs(pars[1]),sd=sqrt(pars[2]),log=log)) 
     return(list(out=out,mllik=mllik))
 
 }
