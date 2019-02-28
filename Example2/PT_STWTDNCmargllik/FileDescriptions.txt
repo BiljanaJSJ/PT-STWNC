@@ -1,22 +1,7 @@
 Calculate marginal likelihood using PT via STWNC foe each model into the subdirectories
-model2e - 2 components equal variances
-model3  - 3 components 
-model3e - 3 components equal variances
-model4  - 4 components
-model5  - 5 components
 
-each of the subdirectories contain files:
-
-ST_Galaxy_runST.R                            - main functions to run the algorithm                        
-ST_Galaxy_functions.R                        - help functions to run the algorithm                        
 calculatemllik_sorttau_combine.R             - calculate marginal likelihood
-savelist_allChains.RData                     - a file with sampled chains 
-AllSamplesCombined_allChains.RData           - combines samples
-
-Other files in this subdirectory:
-
-collectMllik_new.R         - functions for the TI via STWNC
-Table_paper_new.RData      - calculated analytical solution
+collectMllik_new.R                           - functions for the TI via STWNC
 
 
 

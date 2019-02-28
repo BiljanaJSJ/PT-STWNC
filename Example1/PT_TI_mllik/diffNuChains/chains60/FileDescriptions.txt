@@ -7,10 +7,5 @@ calculatemllik.R                 - calculate the marginal likelihood using 20 sa
 
 
 
-analiticalSol.RData              - calculated analytical solution
-appThInt.RData                   - calculated marginal likelihood with TI-PT without bias correction from KL divergence
-KL_list.RData                    - calculate bias using KL divergence
-PT_mllik_out_ls.RData            - calculated marginal likelihood with and  without bias correction
-
 
 

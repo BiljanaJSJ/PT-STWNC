@@ -50,7 +50,7 @@ library(deSolve)
 #input:     par - a vector of values (beta,alpha,S0,I0)
 #output:    a matrix with 2 columns that contains solution for (R,I)
 ###################################################################################
-Rhat = function(par){
+Rhat = function(par,times){
   pars = par[1:2]
   I0=par[4];
   names(pars) = c("beta","alpha");
@@ -65,24 +65,36 @@ Rhat = function(par){
   fits = sol[,2:3]
   return(fits)
 }
-###################################################################################
-#SIRloglik  evaluate tempered likelihood, which is binomial
-#also untempered likelihood is evaluated which can be used to estimate the 
-#marginal likelihood
-#input:          y            - data
-#                R            - number of removed obtained from the numerical 
-#                               solver of the ODE
-#                I            - number of infected obtained from the numerical 
-#                               solver of the ODE
-#                tau          - inverse temperature
-#                N            - population size           
-#output:         a vector with evaluated tempered and untempered likelihood 
-###################################################################################
-SIRloglik = function(y,R,I,tau,N=261) {
-  n       = length(I)
-  llik    = tau*(sum(dbinom(y,N,R/N,log=T))+dbinom(0,N,I[n]/N,log=TRUE)+dbinom(1,N,I[n-1]/N,log=TRUE))
-  mllik   = sum(dbinom(y,N,R/N,log=T))+dbinom(0,N,I[n]/N,log=TRUE)+dbinom(1,N,I[n-1]/N,log=TRUE)
-  return(c(llik=llik,mllik=mllik))
+#############################################################
+# loglik:  Tempered Likelihood is Gaussian
+# here the tempered likelihood is evaluated, as well as
+# the untempered log likelihood which later
+# is used to calculate the log marginal likelihood
+# input:  x           - Galaxy data from MASS package
+#         pars        - vector of parameters of interest
+#         tau         - a scalar value for tau
+#         log         - TRUE/FALSE should likelihood be evaluated on a log scale or on the original scale
+#         parAdd      - a list of additional parameters, can be either sampled 
+#                       parameteres or additional parameters
+# output:   a list 
+#             out    - tempered likelihood
+#             mllik  - untempered likelihood
+#             R1     - solution of DE at pars 
+#############################################################
+loglik = function(x,pars,tau,parAdd,log=T) {  
+
+	R1      = Rhat(pars,parAdd$times)
+	if (length((which(is.nan(R1[,1]))))>0) return(NA)
+	
+	I       = R1[,1]
+	R       = R1[,2]
+	N       = parAdd$N
+	
+	n       = length(I)
+        llik    = tau*(sum(dbinom(x,N,R/N,log=log))+dbinom(0,N,I[n]/N,log=log)+dbinom(1,N,I[n-1]/N,log=log))
+        mllik   = sum(dbinom(x,N,R/N,log=log))+dbinom(0,N,I[n]/N,log=log)+dbinom(1,N,I[n-1]/N,log=log)
+
+  return(list(out=llik,mllik=mllik,R1=R1))
 }
 ###################################################################################
 
@@ -90,175 +102,178 @@ SIRloglik = function(y,R,I,tau,N=261) {
 ###################################################################################
 #logprior  evaluate log prior
 #input:        pars      - a vector of (beta,alpha, S0,I0)
-#              I         - numerical solution for I
-#              priorpars - prior parameters for alpha, beta and I0
+#              PriorPars - prior parameters for alpha, beta and I0
 #output:       evaluated log prior     
 ###################################################################################
-logprior=function(pars,I,priorpars=c(1,1,N,5/N)){
-  n      = length(I)
-  term12 = sum(dgamma(pars[1:2],priorpars[1],priorpars[2],log=T))
-  term3  = dbinom(pars[4],priorpars[3],priorpars[4],log=T)
-  out    = term12+term3
+logprior=function(pars,PriorPars){
+
+  term12   = sum(dgamma(pars[1:2],PriorPars[1],PriorPars[2],log=T))
+  term3    = dbinom(pars[4],PriorPars[3],PriorPars[4],log=T)
+  out      = term12+term3
   return(out)
 }
 
-###################################################################################
-#SIRlogpost    evaluate joint log posterior  P(alpha,beta,I0 / Y, tau)
-#input:        pars      - a vector of (beta,alpha,S0,I0)
-#              y         - data
-#              R         - numerical solution for R
-#              I         - numerical solution for I
-#              tau       - inverse temperature 
-#              priorpars - prior parameters for alpha, beta and I0
-#              N         - population size
-#              discrete  - when not NULL used in the optimization routine
-#                          to find the solution at each function evaluation
-#output:       evaluated log posterior
-###################################################################################
-SIRlogpost = function(pars,y,R=NULL,I,tau,priorpars=c(1,1,N,5/N),N,discrete=NULL) {
- 
-  if (!(is.null(discrete))){
-    pars=c(pars,N-discrete,discrete)
-    R=Rhat(pars)
-    if (length((which(is.nan(R[,1]))))>0) return(NA)
-    I=R[,1]
-    R=R[,2]
-  }
-  #if (is.nan(sum(dbinom(y,N,R/N,log=T)))){
- # print(pars)
-  #print(R)   
-  #}
+#######################################################################
+# posterior_notau: evaluate the posterior distribution
+#                  this function calls the prior of tau function
+# input:  y              - Galaxy data from MASS package
+#         pars        - vector of parameters of interest
+#         tau         - a scalar value for tau
+#         PriorPars   - priors for all of the parameters  
+#         log         - whether log of the prior is evaluated, 
+#                       default is true
+#         parAdd      - a list of additional parameters, can be either sampled 
+#                       parameteres or additional parameters
+#         discrete    - used for optimization, passes the value of I0 
+# output: a value of the posterior evaluation
+########################################################################
+posterior_notau = function(y,pars,tau,PriorPars,parAdd,discrete=NULL,log=T) {
+	
+		if (!(is.null(discrete))){
+                  N         = parAdd$N
+  		  pars      = c(pars,N-discrete,discrete)
+  		  R=Rhat(pars, parAdd$times)
+  		  if (length((which(is.nan(R[,1]))))>0) return(NA)
+		}
+
+	      loglik     = loglik(x=y,pars=pars,tau=tau,parAdd=parAdd)$out
+
+        logpriors  = logprior(pars=pars,PriorPars=PriorPars)
+        out        = loglik+logpriors
  
 
-  loglik    = SIRloglik(y=y,R=R,I=I,tau=tau)[1]
-  logpriors = logprior(pars,I=I,priorpars=priorpars)
-  out       = loglik+logpriors
- 
-
-  return(out)
+  return(list(output=out))
 }
 
-###################################################################################
-#SIRlogpost_tau   evaluate joint log posterior  P(alpha,beta,I0,tau / Y)
-#input:        pars      - a vector of (alpha, beta,S0,I0)
-#              y         - data
-#              R         - numerical solution for R
-#              I         - numerical solution for I
-#              tau       - inverse temperature 
-#              priorpars - prior parameters for alpha, beta and I0
-#              N         - population size
-#              max_pars  - maximum values of (beta,alpha,I0)
-#output:       evaluated log posterior
-###################################################################################
-SIRlogpost_tau =function(pars,y,R,I,tau,priorpars=c(1,1,N,5/N),max_pars){
+#######################################################################
+# posterior: evaluate the posterior distribution
+# this function calls the prior of tau function
+# so it needs current values of the means, sigma2, p and Z as well
+# as maximized values of the parameters to supply the prior_t function
+# input:  y              - Galaxy data from MASS package
+#         pars        - vector of parameters of interest
+#         tau         - a scalar value for tau
+#         log         - whether log of the prior is evaluated, 
+#                       default is true
+#         PriorPars   - priors for all of the parameters  
+#         max         - a vector of optimized paramters of interest
+#         parAdd      - a list of additional parameters, can be either sampled 
+#                       parameteres or additional parameters
+# output: a value of the posterior evaluation
+########################################################################
+posterior =function(pars,y,tau,PriorPars,par_max,parAdd){
   
-  loglik    = SIRloglik(y=y,R=R,I=I,tau=tau)[1]
-  logpriors = logprior(pars,I=I,priorpars=priorpars)
-  pr_tau    = prior_tau(max_pars,y,tau,priorpars=priorpars)
-  out       = loglik+logpriors+pr_tau
+  llik      = loglik(x=y,pars=pars,tau=tau,parAdd=parAdd)$out
+  logpriors = logprior(pars=pars,PriorPars=PriorPars)
+  pr_tau    = prior_tau(par_max=par_max,y=y,tau=tau,PriorPars=PriorPars,parAdd=parAdd)
+  out       = llik+logpriors+pr_tau
   return(out)
 }
-###################################################################################
-#prior_tau   evaluate the log prior for tau
-#input:        max_pars  - maximum values of (beta,alpha,I0)
-#              y         - data
-#              tau       - inverse temperature 
-#              priorpars - prior parameters for alpha, beta and I0
-#output:       evaluated log prior of tau
-###################################################################################
-prior_tau=function(max_pars,y,tau,priorpars=c(1,1,N,5/N)){
-  R         = Rhat(max_pars)
-  loglik    = SIRloglik(y=y,R=R[,2],I=R[,1],tau=tau)[1]
-  logpriors = logprior(max_pars,I=R[,1],priorpars=priorpars)
+#######################################################################
+# prior_tau: calculate the prior of tau
+# input:  
+#         y           - data
+#         max         - vector of parameters of interest
+#         tau         - a scalar value for tau
+#         PriorPars   - priors for all of the parameters  
+#         log         - whether log of the prior is evaluated, 
+#                       default is true
+#         parAdd      - a list of additional parameters, can be either sampled 
+#                       parameteres or additional parameters
+# output: a value of calculated prior of tau
+########################################################################
+prior_tau=function(par_max,y,tau,PriorPars,parAdd){
+	loglik    = loglik(x=y,pars=par_max,tau=tau,parAdd = parAdd)$out
+	logpriors = logprior(pars=par_max,PriorPars=PriorPars)
   return(-loglik-logpriors)
 }
 
 
-###################################################################################
-#SamplePars   sample parmeters of interest while tau is held fixed to its 
-#             current value
-#input:        y               - data
-#              theta           - a vector of current values of (beta,alpha,S0,I0)
-#              tau             - inverse temperature
-#              priorpars       - prior parameters for alpha, beta and I0
-#              log_r_bot       - un-normalized log posterior evaluated at current values 
-#                                of (beta,alpha,S0,I0) 
-#              N               - population size
-#              accepts         - a vector with counts of number of current accepted values
-#                                for (beta,alpha,I0)
-#              q1              - proposal st.dev for beta
-#              q2              - proposal st.dev for alpha
-#output:       theta           - a vector with updated parameters (beta,alpha,S0,I0)
-#              log_r_bot       - updated un-normalized log posterior evaluated at last 
-#                                accepted values of (beta,alpha,S0,I0)
-#              accepts         - updated vector with counts of number of new accepted values
-#                                for (beta,alpha,I0)
-###################################################################################
-SamplePars = function(y,theta=theta[,iter-1],tau=tau[iter-1],priorpars=priorpars,log_r_bot=NA,N,
-                      accepts=accepts,q1,q2){
+#############################################################
+#STstep_pars: Transition one of STWTDNC, sample parameters with fixed tau
+# input:  
+#           pars      - vector of the sampled parameters 
+#           tau       - scalar with value of current tau
+#           y         - data
+#           log_r_bot - a chain of posterior evaluations for updating the parameters
+#           acc       - a vector of counts for the accepted updates for each parameter
+#           PriorPars - priors for all of the parameters  
+#           tune_q1   - tunning chain for the variance of the transition kernerl of the first parameter
+#           tune_q2   - tunning chain for the variance of the transition kernerl of the second parameter
+#           parAdd    - a list of additional parameters, can be either sampled 
+#                       parameteres or additional parameters
 
+#output:  a list 
+#           theta     - a vector of updated parameters, the last element is tau
+#           parAdd    - sampled indicator matrix denoting which data point was assigned to which mixture component
+#           accepts   - a vector of updated counts for the accepted updates for each parameter
+#           log_r_bot - posterior evaluation for updated the parameters
+#############################################################
+STstep_pars = function(pars,y,tau,PriorPars,log_r_bot=NA,
+                       acc,tune_pars,ttune_pars=NULL,parAdd){
 
+    N                 = parAdd$N
     #evaluate  log_r_bot at current theta
-    R                 = Rhat(theta)
-    log_r_bot         = SIRlogpost(theta,y,R=R[,2],I=R[,1],tau,priorpars=priorpars,N=N)
+ 
+    log_r_bot         = posterior_notau(pars=pars,y=y,tau=tau,PriorPars=PriorPars,parAdd = parAdd)$output
 
     #sample I0
-    I0_prop        = rbinom(1,N,theta[4]/N)
-    #range          = (theta[4]-1):(theta[4]+1)
-    #(I0_prop       = sample(range,1))
-    theta_prop     = theta
-    theta_prop[4]  = I0_prop
-    theta_prop[3]  = N-I0_prop
-    R              = Rhat(theta_prop)
-    if (length(R[R<0])>0| length(R[R>N]>0)) log_r_top=-Inf else log_r_top=SIRlogpost(theta_prop,y,R=R[,2],I=R[,1],tau,priorpars,N=N)
-    ratio    = log_r_top-log_r_bot +dbinom(theta[4],N,I0_prop/N,log=T)-dbinom(I0_prop,N,theta[4]/N,log=T)
+    I0_prop           = rbinom(1,N,pars[4]/N)
+ 
+    pars_prop      = pars
+    pars_prop[4]   = I0_prop
+    pars_prop[3]   = N-I0_prop
+    R              = Rhat(pars_prop,parAdd$times)
+    if (length(R[R<0])>0| length(R[R>N]>0)) log_r_top=-Inf else log_r_top=posterior_notau(pars=pars_prop,y=y,tau=tau,PriorPars=PriorPars,parAdd = parAdd)$output
+    ratio    = log_r_top-log_r_bot +dbinom(pars[4],N,I0_prop/N,log=T)-dbinom(I0_prop,N,pars[4]/N,log=T)
     prob     = min(1,exp(ratio))
     u        = runif(1)
     (u<=prob)
     if (u<=prob) {
-      theta       = theta_prop
+      pars        = pars_prop
       log_r_bot   = log_r_top
-      accepts[3]  = accepts[3]+1
+      acc[3]      = acc[3]+1
+      acc[4]      = acc[4]+1
     }
   
     #sample beta with log normal proposal
-    delta           = rnorm(1,0,q1)
-    logbeta_prop    = log(theta[1])+delta
+    delta           = rnorm(1,0,tune_pars[1])
+    logbeta_prop    = log(pars[1])+delta
     (beta_prop      = exp(logbeta_prop))
-    theta_prop      = theta
-    theta_prop[1]   = beta_prop
-    R               = Rhat(theta_prop)
-    if (length(R[R<0])>0 | length(R[R>N])>0) log_r_top = -Inf else log_r_top = SIRlogpost(theta_prop,y,R=R[,2],I=R[,1],tau,priorpars,N=N)
-    ratio = log_r_top -log_r_bot+dlnorm(theta[1],logbeta_prop,q1,log=T)-dlnorm(beta_prop,log(theta[1]),q1,log=T)
+    pars_prop       = pars
+    pars_prop[1]    = beta_prop
+    R               = Rhat(pars_prop,parAdd$times)
+    if (length(R[R<0])>0 | length(R[R>N])>0) log_r_top = -Inf else log_r_top = posterior_notau(pars=pars_prop,y=y,tau=tau,PriorPars,parAdd=parAdd)$output
+    ratio = log_r_top -log_r_bot+dlnorm(pars[1],logbeta_prop,tune_pars[1],log=T)-dlnorm(beta_prop,log(pars[1]),tune_pars[1],log=T)
     prob  = min(1,exp(ratio))
     u     = runif(1)
     (u<=prob)
     if (u<=prob) {
-      theta       = theta_prop
+      pars        = pars_prop
       log_r_bot   = log_r_top
-      accepts[1]  = accepts[1]+1
+      acc[1]      = acc[1]+1
     }
   
     #sample alpha with log normal proposal
-    delta           = rnorm(1,0,q2)
-    logalpha_prop   = log(theta[2])+delta
+    delta           = rnorm(1,0,tune_pars[2])
+    logalpha_prop   = log(pars[2])+delta
     (alpha_prop     = exp(logalpha_prop))
-    theta_prop      = theta
-    theta_prop[2]   = alpha_prop
+    pars_prop       = pars
+    pars_prop[2]    = alpha_prop
 
-    R               = Rhat(theta_prop)
-    if (length(R[R<0])>0 | length(R[R>N])>0) log_r_top = -Inf else log_r_top = SIRlogpost(theta_prop,y,R=R[,2],I=R[,1],tau,priorpars,N=N)
-    ratio = log_r_top-log_r_bot+dlnorm(theta[2],logalpha_prop,q2,log=T)-dlnorm(alpha_prop,log(theta[2]),q2,log=T)
+    R               = Rhat(pars_prop,parAdd$times)
+    if (length(R[R<0])>0 | length(R[R>N])>0) log_r_top = -Inf else log_r_top = posterior_notau(pars=pars_prop,y=y,tau=tau,PriorPars=PriorPars,parAdd=parAdd)$output
+    ratio = log_r_top-log_r_bot+dlnorm(pars[2],logalpha_prop,tune_pars[2],log=T)-dlnorm(alpha_prop,log(pars[2]),tune_pars[2],log=T)
     prob  = min(1,exp(ratio))
     u     = runif(1)
  
     if (u<=prob) {
-      theta           = theta_prop
+      pars            = pars_prop
       log_r_bot       = log_r_top
-      accepts[2]      = accepts[2]+1
+      acc[2]          = acc[2]+1
     }
 
-  return(list(theta=theta,log_r_bot=log_r_bot,accepts=accepts))
+  return(list(theta=c(pars,tau),log_r_bot=log_r_bot,accepts=acc,parAdd=parAdd))
 
 }
 
@@ -269,33 +284,34 @@ SamplePars = function(y,theta=theta[,iter-1],tau=tau[iter-1],priorpars=priorpars
 #         this function is called 8 times in parallel
 # input:  discrete     - when not NULL used in the optimization routine
 #                        to find the solution at each function evaluation of SIRlogpost 
-#         theta        - a vector of current values (beta,alpha, S0,I0)
+#         pars         - a vector of current values (beta,alpha, S0,I0)
 #         y            - data
 #         tau_prop     - proposed value of tau
 #         te           - current value of tau
-#         priorpars    - prior parameters for alpha, beta and I0
-#         N            - population size
-# output: max_pars_p   - maximized (beta, alpha) at proposed tau
-#         eval_fun_p   - maximum value of joint posterior (beta,alpha, I0) at proposed tau
-#         max_pars_i   - maximized (beta, alpha) at current tau
-#         eval_fun_i   - maximum value of joint posterior (beta,alpha, I0) at current tau
+#         PriorPars    - prior parameters for alpha, beta and I0
+#         parAdd       - a list of additional parameters, can be either sampled 
+#                        parameteres or additional parameters
+# output: max_prop         - a vector of maximized parameters at proposed tau
+#         max_it           - a vector of maximized parameters at current tau
+#         eval_fun_p       - maximum value of joint posterior (beta,alpha, I0) at proposed tau
+#         eval_fun_i       - maximum value of joint posterior (beta,alpha, I0) at current tau
 ####################################################################################################
-wrapp_fun=function(discrete,theta,y,tau_prop,te,priorpars,N,max,iter){
+wrapp_fun=function(discrete,pars,y,tau_prop,te,PriorPars,parAdd){
  
  
- if ((is.na(SIRlogpost(pars=theta[1:2],y=y,tau=tau_prop,priorpars=priorpars,N=N,discrete=discrete))) || (is.na(SIRlogpost(pars=theta[1:2],y=y,tau=te,priorpars=priorpars,N=N,discrete=discrete))) )   return(c(-19999999999,-19999999999,-19999999999,-19999999999))
+ if ((is.na(posterior_notau(pars=pars[1:2],y=y,tau=tau_prop,PriorPars=PriorPars,parAdd=parAdd,discrete=discrete)$output)) || (is.na(posterior_notau(pars=pars[1:2],y=y,tau=te,PriorPars=PriorPars,parAdd=parAdd,discrete=discrete)$output)) )   return(c(-19999999999,-19999999999,-19999999999,-19999999999))
 
  
-  max_pars_p_optim=optim(theta[1:2],function(x) (-1)*SIRlogpost(pars=c(x[1],x[2]),y=y,tau=tau_prop,
-                                                          priorpars=priorpars,N=N,discrete=discrete),control=list(maxit=100000000))
+  max_pars_p_optim=optim(pars[1:2],function(x) (-1)*posterior_notau(pars=c(x[1],x[2]),y=y,tau=tau_prop,
+                                                          PriorPars=PriorPars,parAdd=parAdd,discrete=discrete)$output,control=list(maxit=100000000))
  
  
   max_pars_p       = max_pars_p_optim$par
 
   eval_fun_p       =(-1)*max_pars_p_optim$value
   
-  max_pars_i_optim=optim(theta[1:2],function(x) (-1)*SIRlogpost(pars=c(x[1],x[2]),y=y,tau=te,
-                                                          priorpars=priorpars,N=N,discrete=discrete),control=list(maxit=100000000,trace=TRUE))
+  max_pars_i_optim=optim(pars[1:2],function(x) (-1)*posterior_notau(pars=c(x[1],x[2]),y=y,tau=te,
+                                                          PriorPars=PriorPars,parAdd=parAdd,discrete=discrete)$output,control=list(maxit=100000000,trace=TRUE))
  
 
   max_pars_i       = max_pars_i_optim$par
@@ -303,90 +319,64 @@ wrapp_fun=function(discrete,theta,y,tau_prop,te,priorpars,N,max,iter){
 
   
 
-  return(c(max_pars_p,eval_fun_p,max_pars_i,eval_fun_i))
+  return(list(max_prop=max_pars_p,max_it=max_pars_i,eval_fun_p=eval_fun_p,eval_fun_i=eval_fun_i))
 
 }
 
-####################################################################################################
-# STstep_tau    update the inverse temperature parameter while keeping the parameters of interest
-#               fixed at their current values
-#input:         te            - current value of tau
-#               theta         - current value of (beta, alpha, S0,I0)
-#               y             - data
-#               priorpars     - prior pars (beta, alpha, I0)
-#               tune          - if not NULL, tune the step if tau proposal
-#               N             - population size
-#               acc           - number of accepted tau
-#               cl            - cluster
-#output:        theta         - current value of (beta, alpha, S0,I0)
-#               te            - updated value of tau
-#               log_r_bot1    - un-normalized log posterior (thea,tau \Y) at current tau
-#               accepts1      - updated number of accepted tau
-#               tau_prop      - proposed tau
-#               log_r_top1    - un-normalized log posterior (thea,tau \Y) at proposed tau
-####################################################################################################
-STstep_tau = function(te,theta,y,priorpars,tune=NULL,N,acc=accepts1[kp],cl,iter){
-  
-  #propose tau
-  if (is.null(tune)){
-    tau_prop       = runif(n=1,0,1) 
-  }else{
-    tau_prop       = rtruncnorm(1,a=0,b=1,te,tune)
-  }
+##################################################
+# OptimizePars  - optimize parameters of interest 
+#                 called from Tstep_tau, returns vectors of
+#                 optimized parameters for proposed tau and for current tau
+# Input:  y           - data
+#         tau_prop    - value of proposed tau
+#         pars        - vector of the sampled parameters, last element contains current tau 
+#         PriorPars   - priors for all of the parameters  
+#         parAdd      - a list of additional parameters, can be either sampled 
+#                       parameteres or additional parameters
+# Output: list
+#         max_prop         - a vector of maximized parameters at proposed tau
+#         max_it           - a vector of maximized parameters at current tau
+##################################################
 
 
-# optimize (beta, alpha) for 8 different values of I0
-# run in parallel collect the results in the following matrices and vectors
-max_pars_p =max_pars_i=matrix(NA,8,2)
-eval_fun_p =eval_fun_i= rep(NA,8)
+OptimizePars<- function(y=y,tau_prop=tau_prop,pars=c(pars,tau),PriorPars=PriorPars,parAdd=parAdd, cl){
+	
+	max_pars_p = max_pars_i=matrix(NA,8,2)
+  eval_fun_p = eval_fun_i= rep(NA,8)
+	te         = pars[length(pars)]
+	pars       = pars[(1:(length(pars)-1))]
+	N          = parAdd$N
+	times      = parAdd$times
 
 
-clusterExport(cl, c("wrapp_fun",'Rhat',"make.SIR",'SIRlogpost','times','SIRloglik','logprior','rk4'))
+	
+	clusterExport(cl, c("wrapp_fun",'Rhat',"make.SIR",'posterior','posterior_notau','times','loglik','logprior','rk4','N'))
+	
+	getlist=parLapplyLB(cl , 1:8,wrapp_fun,pars=pars,y=y,tau_prop=tau_prop,te=te,PriorPars=PriorPars,parAdd=parAdd)
+	
 
-getlist=parLapplyLB(cl , 1:8,wrapp_fun,theta,y=y,tau_prop=tau_prop,te=te,priorpars=priorpars,N=N,iter=iter)
-
-for (i in (1:8)){
-max_pars_p[i,] =getlist[[i]][1:2]
-eval_fun_p[i] =getlist[[i]][3]
-max_pars_i[i,]=getlist[[i]][4:5]
-eval_fun_i[i]=getlist[[i]][6]
-}
-
-  # to find the maximum value of I0, just find the I0 that corresponds to the maximum of the 
-  # evaluated joint posterior SIRlogpost
-  #Do this for proposed and for current tau separatelly
-  ind=which(eval_fun_p==max(eval_fun_p))
-  # max_pars_prop keeps maximized (beta,alpha,S0,I0) at proposed tau
-  max_pars_prop=c(max_pars_p[ind,],N-ind,ind)
-
-  
-  ind1=which(eval_fun_i==max(eval_fun_i))
-  # max_pars_it keeps maximized (beta,alpha,S0,I0) at current tau
-  max_pars_it=c(max_pars_i[ind1,],N-ind1,ind1)
-
-  
-  # solve the ODE for current theta=(beta,alpha,S0,I0) needed to evaluate SIRlogpost_tau at proposed and current tau
-  #(Note that solver is not run within SIRlogpost_tau, for computational efficiency)
-  R             =   Rhat(theta)
-  log_r_top     =   SIRlogpost_tau(theta,y=y,R=R[,2],I=R[,1],tau=tau_prop,priorpars=priorpars,max_pars=max_pars_prop)
-  log_r_bot     =   SIRlogpost_tau(theta,y=y,R=R[,2],I=R[,1],tau=te,priorpars=priorpars,max_pars=max_pars_it)
-    
-
-  #calculate alpha
-  (alpha = log_r_top - log_r_bot+log(dtruncnorm(te,a=0,b=1,tau_prop,tune))-log(dtruncnorm(tau_prop,a=0,b=1,te,tune)))
-  # make a decision
-  
-  if (all(!is.na(alpha) , runif(1) < exp(alpha))){
-    # accept the move
-    acc=acc+1;
-    te=tau_prop
-    }
-  
-  return(list(te=te,
-              log_r_bot1 =log_r_bot,
-              accepts1=acc,
-              tau_prop=tau_prop,
-              log_r_top1=log_r_top)) 
+	for (i in (1:8)){
+		max_pars_p[i,] = getlist[[i]]$max_prop
+	        eval_fun_p[i]  = getlist[[i]]$eval_fun_p
+		max_pars_i[i,] = getlist[[i]]$max_it
+	        eval_fun_i[i]  = getlist[[i]]$eval_fun_i
+	}
+	
+	# to find the maximum value of I0, just find the I0 that corresponds to the maximum of the 
+	# evaluated joint posterior posterior_notau
+	#Do this for proposed and for current tau separatelly
+	ind=which(eval_fun_p==max(eval_fun_p))
+	# max_pars_prop keeps maximized (beta,alpha,S0,I0) at proposed tau
+	max_prop=c(max_pars_p[ind,],N-ind,ind)
+	
+	
+	ind1=which(eval_fun_i==max(eval_fun_i))
+	# max_pars_it keeps maximized (beta,alpha,S0,I0) at current tau
+	max_it=c(max_pars_i[ind1,],N-ind1,ind1)
+	
+	return(list(max_prop=max_prop, max_it=max_it))
+	
+	
 }
 
 

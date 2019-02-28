@@ -18,12 +18,17 @@
 ####################################################################
 
 
-setwd('D:/Publications/PT-STWNC/Code/Example4')
+#setwd('D:/Publications/PT-STWNC/Code/Example4')
 source('SIR_ST_functions.R')
 source('pairs2_function.R')
-out_ls=get(load('ST35000.RData'))
-low=1000
-up=35000
+# out_ls=get(load('ST35000.RData'))
+# low=1000
+# up=35000
+out_ls= get(load('ST35000.RData'))
+low   = 1000
+up    = 35000
+
+length(which(out_ls$swappers[,3]==1))/up
 
 ## put histograms on the diagonal
 panel.hist <- function(x, ...)
@@ -53,7 +58,8 @@ par(mfrow=c(2,2))
 hist(out_ls$PT_chain[[1]][low:up,2],main=expression(alpha),cex.axis=2.5,cex.main=3.5,nclass=150,col='cyan', probability = T, xlab   ='', ylab   ='')
 hist(out_ls$PT_chain[[1]][low:up,1],main=expression(beta),cex.axis=2.5,cex.main=3.5,nclass=150,col='cyan', probability = T, xlab   ='', ylab   ='')
 hist(out_ls$PT_chain[[1]][low:up,4],main=expression(I(0)),cex.axis=2.5,cex.main=3.5,nclass=150,col='cyan', probability = T, xlab   ='', ylab   ='')
-hist(out_ls$tau[low:up],main=expression(tau),cex.axis=2.5,cex.main=3.5,nclass=150,col='cyan', probability = T, xlab   ='', ylab   ='')
+hist(out_ls$PT_chain[[1]][low:up,5],main=expression(tau),cex.axis=2.5,cex.main=3.5,nclass=150,col='cyan', probability = T, xlab   ='', ylab   ='')
+
 dev.off()
 
 #pdf('pairsplot_SIR.pdf',width=15,height=12,pointsize=15)
@@ -70,11 +76,12 @@ dev.off()
 
 
 
+
 library(coda)
 traceplot(as.mcmc(out_ls$PT_chain[[chain]][,1]))
 traceplot(as.mcmc(out_ls$PT_chain[[chain]][,2]))
 traceplot(as.mcmc(out_ls$PT_chain[[chain]][,4]))
-
+traceplot(as.mcmc(out_ls$PT_chain[[chain]][,5]))
 
 par(mfrow=c(2,1))
 traceplot(as.mcmc(out_ls$tau))

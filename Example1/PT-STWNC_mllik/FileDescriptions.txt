@@ -1,14 +1,8 @@
 Calculate marginal likelihood using PT via STWNC
 
-ST_functions_new.R               - functions for the parallel tempering algorithm used by the file  Bimodal_parallel_Temper.R
-runST.R                          - run PT
+
 calculatemllik_Sorting_combine.R - calcuate marginal likelhood
 
-
-
-analiticalSol.RData                       - calculated analytical solution
-AllSamplesCombined_AllChains.RData        - calculated marginal likelihood with TI-STWNC
-savels_AllChains.RData                    - saved all chains
 
 
 

@@ -12,11 +12,19 @@
 #                b.stojkova@stat.ubc.ca
 ####################################################################
 
-source("ST_functions_new.r")
+source('../Functions/ST_functions.r')
+source("ST_pants.r")
+library(truncnorm)
+#generate data
+n=25
+p_mu=1.5
+sigma=1
+set.seed(1555)
+#set.seed(2500)
+
+y=data(n=n,mu=abs(p_mu),sigma=sigma)
 
 
-set.seed(2555)
-out_ls=runST(niter=50000,SigmaPriorPars=c(1,1),n=25,k=1,switchllik='power',q1=0.15,q2=0.1,kp1=c(1,1),kptau=1)
-
+out_ls=runST(niter=35000,y=y,PriorPars=c(0,1,1,1),IniPar=c(-0.8,0.2,0.5),tune_pars_init=c(0.15,0.1),ttune_pars=c(rep(FALSE,2)))
 
 

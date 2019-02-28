@@ -15,19 +15,18 @@
 
 #this script creates the plots from the paper
 
-
-source('ST_functions_new.r')
+library(coda)
+source('../Functions/ST_functions.r')
 source('filledContourFunction1.r')
 #burn the first half of the iterations
 
-y=get(load('ST50000_power.RData'))$y
+out_ls= get(load('ST50000.RData'))
+y     = out_ls$y
+length(which(out_ls$swappers[,3]==1))
 
-
-
-out_ls=get(load('ST50000_power.RData'))
 ########################################
 #traceplots
-library(coda)
+
 #library(ks)
 
 ########################################
@@ -45,8 +44,8 @@ up=50000
 
 ############################################################################################
 #calculate the theoretical mean of mu
-n=25
-y=out_ls$y
+n=length(y)
+#y=out_ls$y
 y_sum=sum(y)
 mean_th=y_sum*(1/(n+var(y)))
 sd_th=sqrt(var(y)/(n+var(y)))
@@ -80,9 +79,9 @@ plot(sigmagrid,thsigma)
 
 
 
-tau_samples=out_ls$PT_chain[[1]][low:up,2]
+tau_samples=out_ls$PT_chain[[1]][low:up,3]
 mu_samples=out_ls$PT_chain[[1]][low:up,1]
-sigma_samples=out_ls$PT_chain[[1]][low:up,3]
+sigma_samples=out_ls$PT_chain[[1]][low:up,2]
 
 #fold the samples 
 tau_samples=c(tau_samples, (-1)*tau_samples,2-tau_samples)
@@ -127,8 +126,8 @@ densGeom=density(c(GeomSamples, (-1)*GeomSamples,2-GeomSamples),from=0,to=1,n=nb
 
 
 #density estimates of mu and sig2
-densSg2=density(out_ls$PT_chain[[1]][low:up,3],n=nbin)
-densSg2_1=density(out_ls$PT_chain[[2]][low:up,3],n=nbin)
+densSg2=density(out_ls$PT_chain[[1]][low:up,2],n=nbin)
+densSg2_1=density(out_ls$PT_chain[[2]][low:up,2],n=nbin)
 chain2mu=density(out_ls$PT_chain[[2]][low:up,1],adj=0.2,n=nbin)
 
 
@@ -214,7 +213,7 @@ dev.off()
 
 
 library(MASS)
-#library(rgl)
+library(rgl)
 
 
 taugrid = seq(0.000001,1,length=100)
@@ -227,14 +226,14 @@ mugrid  = seq(-4,4,length=100)
 #use the reflected samples to obtain kernel density estimate
 #thus avoiding the edge effects
 
-tau_samples=out_ls$PT_chain[[1]][low:up,2]
+tau_samples=out_ls$PT_chain[[1]][low:up,3]
 theta_samples=out_ls$PT_chain[[1]][low:up,1]
 
 tau_samples=c(tau_samples, (-1)*tau_samples,2-tau_samples)
 theta_samples=rep(theta_samples,3)
 
 f1=get(load('f1.RData'))
-# f1=kde2d(theta_samples,tau_samples,n=c(1000,1000))
+ #f1=kde2d(theta_samples,tau_samples,n=c(1000,1000))
 # save(f1,file='f1.RData')
 
 
@@ -387,9 +386,9 @@ neg_mean_se=sqrt(var(out_ls$PT_chain[[chain]][low:up,1][which(out_ls$PT_chain[[c
 
 chain=2
 #posterior mean of sigma2
-mean(out_ls$PT_chain[[chain]][low:up,3])
+mean(out_ls$PT_chain[[chain]][low:up,2])
 
-acfsigma=acf(out_ls$PT_chain[[chain]][low:up,3])$acf
+acfsigma=acf(out_ls$PT_chain[[chain]][low:up,2])$acf
 acfsigma[which(acfsigma<0.05)]=0
 acfsigma=2*sum(acfsigma)-1
 #standard error adjusted for autocorrelation of the posterior mean estimate of sigma2
@@ -399,25 +398,11 @@ sigma2_se=sqrt(var(out_ls$PT_chain[[chain]][low:up,1])/(up-low))*sqrt(acfsigma)
 #marginal likelihood and acceptance rates
 chain=1
 mean(out_ls$mllik[[chain]][low:up])
-#-40.43459 from chain=1
 
 acc_mu_mu_chain1=sum(out_ls$accepts[[1]][,1]/up)
-#0.43464
 acc_mu_sigma_chain1=sum(out_ls$accepts[[1]][,2]/up)
-#0.51374
-acc_tau=(out_ls$accepts1[1]/up)
-#0.69096
-
+acc_tau=(out_ls$acceptsTau[1]/up)
 acc_mu_mu_chain2=sum(out_ls$accepts[[2]][,1]/up)
-#0.3882
 acc_mu_sigma_chain2=sum(out_ls$accepts[[2]][,2]/up)
-#0.49304
 
 
-
-#plot of the geometric schedule
-#ti=(i/M)^5
-# ti=sapply(1:30, function(x) {(x/30)^5})
-# pdf('Geom_schedule.pdf')
-# hist(ti,nclass=50,col=rgb(1,0,0,0.5),prob=T,main='Geometric schedule',xlab=expression(tau))
-# dev.off()

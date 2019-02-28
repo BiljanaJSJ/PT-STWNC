@@ -1,21 +1,10 @@
 Calculate marginal likelihood using PT via STWNC foe each model into the subdirectories
-model2e - 2 components equal variances
-model3  - 3 components 
-model3e - 3 components equal variances
-model4  - 4 components
-model5  - 5 components
 
 galaxy_functions_PT.R                   - help functions for the TI via PT
 Galaxy_Mixture_parallel_Temper.R        - main functions for the TI via PT
 runTI_PT.R                              - run  Parallel Tempering
-
-each of the subdirectories contain files
-
-CalculateMargLlik.R                            - calculate marginal likelihood
-CalculateBayesFactors.R                        - calculate Bayes Factors
-appThInt.RData                                 - calculated marginal likelihood without bias correction
-KL_list.RData                                  - KL divergence for the bias correction 
-marglikelihood.RData                           - calculated marginal likelihood with and without bias correction
+CalculateMargLlik.R                     - calculate marginal likelihood
+CalculateBayesFactors.R                 - calculate Bayes Factors
 
 
 
