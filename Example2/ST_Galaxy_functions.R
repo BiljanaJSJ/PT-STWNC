@@ -474,7 +474,7 @@ for (l in (1:k)){
   
   sigma2_prop            = sigma2
   logsig_prop            = log(sigma2)
-  logsig_prop            = rnorm(1,log(sigma2),tune_pars[pars_tune[l]])
+  logsig_prop            = rnorm(1,log(sigma2),tune_pars[pars_tune])
   sigma2_prop            = exp(logsig_prop)
   
   pars_prop              = pars

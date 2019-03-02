@@ -273,7 +273,7 @@ initialization=function(niter,nstops,kp1,tune_pars_init,IniPar,nchains,ttau,parA
 #             tune_q2          - tunning chain for the variance of the transition kernerl of the second parameter
 ######################################################################################
 
-runST=function(niter = 500,y,PriorPars,IniPar,tune_pars_init,ttune_pars,nstops=20,kp1=1,kptau=1, nchains=2,ttau=c(NA, FALSE),parAdd=NULL, cl=NULL, whichTune=NULL){
+runST=function(niter = 500,y,PriorPars,IniPar,tune_pars_init,ttune_pars,nstops=20,kp1=1,kptau=1, nchains=2,ttau=c(NA, FALSE),parAdd=NULL, cl=NULL){
 
 
 	#start the PT with two chains
