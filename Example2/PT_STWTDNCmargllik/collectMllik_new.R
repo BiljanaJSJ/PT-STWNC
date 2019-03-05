@@ -20,8 +20,8 @@
 low = 17500
 up  = 35000
 
-listfolders=list.files('/Users/bjonoska/Documents/BiasGalaxyNewPriors_7_4_2016/STWNC_mllik', full.names = TRUE)
-n=listfolders[4:8]
+listfolders=list.files('/zfs/users/b.stojkova/b.stojkova/PT-STWNC/Example2_Feb12019/PT_STWTDNCmargllik', full.names = TRUE)
+n=listfolders[5:9]
 mllik=matrix(NA,up-low+1,20)
 mllik_se=mllik_se1=rep(NA,20)
 
@@ -36,27 +36,30 @@ colnames(table)=c('marignal likelihood','SD')
 rownames(table)=c('model2e','model3','model3e','model4','model5')
 
 
-save(table,file='Table_paper.RData')
 
+#Bayes Factors
+BF=rep(NA,9)
+for (i  in (2:5)){
+BF[i]=table[i,1]-table[1,1]
+}
+
+for (i  in (3:5)){
+BF[5+i-2]=table[i,1]-table[2,1]
+}
+for (i  in (4:5)){
+BF[8+i-3]=table[i,1]-table[3,1]
+}
+i=5
+BF[10+i-4]=table[i,1]-table[4,1]
+
+#	$\log{BF21}$	$\log{BF31}$ $\log{BF41}$ $\log{BF51}$ $\log{BF32}$ $\log{BF42}$ & 2.45 & 0.39 & 0.38 \\ 
+#		$\log{BF52}$ $\log{BF43}$ $\log{BF53}$ 	$\log{BF54}$
+
+retls=list(table=table,BF=BF)
+save(retls,file='Table_paper.RData')
 
 
 library(xtable)
 xtable(table)
+print(BF)
 
-
-% latex table generated in R 3.2.2 by xtable 1.8-2 package
-% Mon Dec 12 08:55:00 2016
-\begin{table}[ht]
-\centering
-\begin{tabular}{rrr}
-  \hline
- & marignal likelihood & SD \\
-  \hline
-model2e & -247.51 & 0.76 \\
-  model3 & -234.93 & 0.65 \\
-  model3e & -240.28 & 0.67 \\
-  model4 & -231.04 & 0.89 \\
-  model5 & -227.46 & 0.76 \\
-   \hline
-\end{tabular}
-\end{table}

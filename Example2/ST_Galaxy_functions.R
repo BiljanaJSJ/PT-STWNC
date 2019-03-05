@@ -57,9 +57,9 @@ loglik =function(x,pars,tau,log=T,parAdd){
 		p=pars[(2*k+1):(2*k+k)]
 	}else{
 		equalVar=1
-    	means=pars[1:k]
-	    sigma2=pars[((k+1):(k+1))]
-	    p=pars[(k+2):(2*k+1)]
+    	        means=pars[1:k]
+	        sigma2=pars[((k+1):(k+1))]
+	        p=pars[(k+2):(2*k+1)]
 	}
 	
   llik     = dnorm(x,apply(t(parAdd)*matrix(means,length(x),k,byrow=T),1,sum),
@@ -175,7 +175,7 @@ posterior_sig=function(y,pars,tau,PriorPars,parAdd){
 		
 		llike     = loglik(x=y,pars=pars,tau=tau,parAdd=parAdd)
 		llik      = llike$out
-	  psig      = prior_sigma2(sigma2=llike$sigma2,Sigmapriorpars=PriorPars)
+	    psig      = prior_sigma2(sigma2=llike$sigma2,Sigmapriorpars=PriorPars)
 
     return(llik+psig)
 }
@@ -258,7 +258,7 @@ posterior_optim=function(y,Z,p,means,sigma2,tau,PriorPars,k){
 ########################################################################
 posterior_notau=function(y,pars,tau,log=T,PriorPars,parAdd=NULL){
 	
-	k         = pars[length(pars)]	
+	#k         = pars[length(pars)]	
 	llike     = loglik(x=y,pars=pars,tau=tau,parAdd=parAdd)
 	llik      = llike$out	
 	
@@ -285,7 +285,7 @@ posterior_notau=function(y,pars,tau,log=T,PriorPars,parAdd=NULL){
 posterior=function(y,pars,tau,log=T,PriorPars,par_max,parAdd=NULL,parAdd_max=NULL){
 	
 
-		k         = pars[length(pars)]	
+		#k         = pars[length(pars)]	
 		llike     = loglik(x=y,pars=pars,tau=tau,parAdd=parAdd)
 		llik      = llike$out	
 			
