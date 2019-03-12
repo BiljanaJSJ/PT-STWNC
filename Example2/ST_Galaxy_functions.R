@@ -14,21 +14,6 @@
 ####################################################################
 
 
-############################################################
-# surf.colors : Graphical, used to color the surface of the 2D function with 
-# terrain colors
-# input :    x  - matrix of function surface estimates
-#Source: https://stat.ethz.ch/pipermail/r-help/2003-September/039104.html
-############################################################
-surf.colors <- function(x, col = terrain.colors(20)) {
-  # First we drop the 'borders' and average the facet corners
-  # we need (nx - 1)(ny - 1) facet colours!
-  x.avg <- (x[-1, -1] + x[-1, -(ncol(x) - 1)] +
-              x[-(nrow(x) -1), -1] + x[-(nrow(x) -1), -(ncol(x) - 1)]) / 4
-  # Now we construct the actual colours matrix
-  colors = col[cut(x.avg, breaks = length(col), include.lowest = T)]
-  return(colors)
-}
 
 #############################################################
 # loglik:  Tempered Likelihood is Gaussian
@@ -41,13 +26,16 @@ surf.colors <- function(x, col = terrain.colors(20)) {
 #         log         - TRUE/FALSE should likelihood be evaluated on a log scale or on the original scale
 #         parAdd      - a list of additional parameters, can be either sampled 
 #                       parameteres or additional parameters
+#         mllik_eval  - TRUE/FALSE whether to evaluate untempered likelihood
+#                       needed for marginal likelihood calculation
+#                       by default is FALSE and only lok likelihood is evaluated
 # output:   a list 
 #             out    - tempered likelihood
 #             mllik  - untempered likelihood
 #             sigma2 - extracted parameters from pars vector
 #             p      - extracted parameters from pars vector  
 #############################################################
-loglik =function(x,pars,tau,log=T,parAdd){
+loglik =function(x,pars,tau,log=T,parAdd, mllik_eval=FALSE){
  
 	k=pars[length(pars)]
 	if (((length(pars)-1) %% k)==0) {
@@ -57,9 +45,9 @@ loglik =function(x,pars,tau,log=T,parAdd){
 		p=pars[(2*k+1):(2*k+k)]
 	}else{
 		equalVar=1
-    	        means=pars[1:k]
-	        sigma2=pars[((k+1):(k+1))]
-	        p=pars[(k+2):(2*k+1)]
+    	means=pars[1:k]
+	    sigma2=pars[((k+1):(k+1))]
+	    p=pars[(k+2):(2*k+1)]
 	}
 	
   llik     = dnorm(x,apply(t(parAdd)*matrix(means,length(x),k,byrow=T),1,sum),
@@ -67,7 +55,8 @@ loglik =function(x,pars,tau,log=T,parAdd){
   
   tllik=tau*sum(llik)
  
- 
+  mllik    = NULL
+ if (mllik_eval){
    output = matrix(NA,length(x),length(p))
    for(kp in (1:length(p))){
    
@@ -82,7 +71,7 @@ loglik =function(x,pars,tau,log=T,parAdd){
     }
 
     mllik=sum(log(apply(output,1,sum)))
-
+  }
 
 
   return(list(out=tllik,mllik=mllik,sigma2=sigma2,p=p))
@@ -118,7 +107,14 @@ prior_means=function(means,Meanpriorpars,log=T){
 #output:     evaluated prior of sigma2 for each of the components
 ############################################################
 prior_sigma2=function(sigma2,Sigmapriorpars, log=T){
-  sum((dgamma(1/sigma2,shape=Sigmapriorpars[1],scale=1/Sigmapriorpars[2],log=log)))
+  #sum((dgamma(1/sigma2,shape=Sigmapriorpars[1],scale=1/Sigmapriorpars[2],log=log)))
+if (log) {
+
+ ret=sum(log(dinvgamma(sigma2,shape=Sigmapriorpars[1],scale=Sigmapriorpars[2])))
+}else{
+ ret=sum((dinvgamma(sigma2,shape=Sigmapriorpars[1],scale=Sigmapriorpars[2])))
+}
+return(ret)
 }
 #######################################################################
 # posterior_mean: evaluate the conditional posterior distribution of sigma2
@@ -175,7 +171,7 @@ posterior_sig=function(y,pars,tau,PriorPars,parAdd){
 		
 		llike     = loglik(x=y,pars=pars,tau=tau,parAdd=parAdd)
 		llik      = llike$out
-	    psig      = prior_sigma2(sigma2=llike$sigma2,Sigmapriorpars=PriorPars)
+	  psig      = prior_sigma2(sigma2=llike$sigma2,Sigmapriorpars=PriorPars)
 
     return(llik+psig)
 }
@@ -258,7 +254,7 @@ posterior_optim=function(y,Z,p,means,sigma2,tau,PriorPars,k){
 ########################################################################
 posterior_notau=function(y,pars,tau,log=T,PriorPars,parAdd=NULL){
 	
-	#k         = pars[length(pars)]	
+	k         = pars[length(pars)]	
 	llike     = loglik(x=y,pars=pars,tau=tau,parAdd=parAdd)
 	llik      = llike$out	
 	
@@ -285,7 +281,7 @@ posterior_notau=function(y,pars,tau,log=T,PriorPars,parAdd=NULL){
 posterior=function(y,pars,tau,log=T,PriorPars,par_max,parAdd=NULL,parAdd_max=NULL){
 	
 
-		#k         = pars[length(pars)]	
+		k         = pars[length(pars)]	
 		llike     = loglik(x=y,pars=pars,tau=tau,parAdd=parAdd)
 		llik      = llike$out	
 			
@@ -317,7 +313,7 @@ SSE_f = function(y,Z,means,k){
 #        which are used as probabilities for the multinomial distribution
 #        when sampling the latent variable Z
 #############################################################
-mpij = function(y,means,sigma2,p,tau){
+mpij = function(y,means,sigma2,p){
   output = matrix(NA,length(y),length(p))
   for(kp in (1:length(p))){
      if (length(sigma2)==length(p)) 
@@ -407,7 +403,7 @@ STstep_pars =	function(pars,tau,y,log_r_bot=NA,acc,
     }	
 	}
 	
-  fmpij      = mpij(y=y,means=means,sigma2=sigma2,p=p,tau=tau)
+  fmpij      = mpij(y=y,means=means,sigma2=sigma2,p=p)
   pij        = exp(fmpij)/apply(exp(fmpij),1,sum)
   Z          = sampleZ(pij)
 
@@ -474,7 +470,7 @@ for (l in (1:k)){
   
   sigma2_prop            = sigma2
   logsig_prop            = log(sigma2)
-  logsig_prop            = rnorm(1,log(sigma2),tune_pars[pars_tune])
+  logsig_prop            = rnorm(1,log(sigma2),tune_pars[pars_tune[l]])
   sigma2_prop            = exp(logsig_prop)
   
   pars_prop              = pars
@@ -552,25 +548,45 @@ OptimizePars <- function(y,tau_prop,pars,PriorPars,parAdd=NULL, cl=NULL){
 	#mu is optimized using the posterior mean of the means formula 
 	eps=10^-2
 	for (i in (2:N)){
+
+	         Z_prop_max[[i]]	= matrix(0,dim(Z)[1],dim(Z)[2])
+	                 # distances=t(sapply(1:k,function(x){ dnorm(y,max_means_prop[i-1,x],sqrt(max_sigma2_prop[i-1,x]))}))
+	                 # ind=sapply(1:ncol(distances), function(x) {distances[,x] %in% min(distances[,x])})
+	                 # Z_prop_max[[i]][ind]=1
+		          # #resample Z for the maximized means, sigma2 and p at tau_prop
+		 fmpij                  = mpij(y,means=max_means_prop[i-1,],sigma2=max_sigma2_prop[i-1,],p=p_max_prop[i-1,])
+		 pij                    = t(exp(fmpij)/apply(exp(fmpij),1,sum))
+                 ind                    = sapply(1:ncol(pij), function(x) {pij[,x] %in% max(pij[,x])})
+                 Z_prop_max[[i]][ind]   = 1
+
+		# Z_prop_max[[i]]        = sampleZ(pij)
+		# 
+	Nk_prop[i,]            = apply(Z_prop_max[[i]],1,sum)
+		    # 
+		    # 
+		# #resample Z for the maximized means, sigma2 and p at current tau
+                 Z_it_max[[i]]    	= matrix(0,dim(Z)[1],dim(Z)[2])
+		 fmpij                  = mpij(y,means=max_means_it[i-1,],sigma2=max_sigma2_it[i-1,],p=p_max_it[i-1,])
+		 pij                    = t(exp(fmpij)/apply(exp(fmpij),1,sum))
+		       # Z_it_max[[i]]          = sampleZ(pij)
+		 ind                    = sapply(1:ncol(pij), function(x) {pij[,x] %in% max(pij[,x])})
+                 Z_it_max[[i]][ind]     = 1
+
+
+		
+		#distances=t(sapply(1:k,function(x){ dnorm(y,max_means_it[i-1,x],sqrt(max_sigma2_it[i-1,x]))}))
+		#ind=sapply(1:ncol(distances), function(x) {distances[,x] %in% max(distances[,x])})
+		#Z_it_max[[i]][ind]=1
 		
 		
-		#resample Z for the maximized means, sigma2 and p at tau_prop
-		fmpij                  = mpij(y,tau=tau_prop,means=max_means_prop[i-1,],sigma2=max_sigma2_prop[i-1,],p=p_max_prop[i-1,])
-		pij                    = exp(fmpij)/apply(exp(fmpij),1,sum)
-		Z_prop_max[[i]]        = sampleZ(pij)
-		Nk_prop[i,]            = apply(Z_prop_max[[i]],1,sum)
-		
-		
-		#resample Z for the maximized means, sigma2 and p at current tau
-		fmpij                  = mpij(y,tau=tau,means=max_means_it[i-1,],sigma2=max_sigma2_it[i-1,],p=p_max_it[i-1,])
-		pij                    = exp(fmpij)/apply(exp(fmpij),1,sum)
-		Z_it_max[[i]]          = sampleZ(pij)
 		Nk_it[i,]              = apply(Z_it_max[[i]],1,sum)
-		
-		
-		#maximize p for both proposed and current tau
+		# 
+		# 
+		# #maximize p for both proposed and current tau
 		p_max_prop[i,]         = Nk_prop[i,]/sum(Nk_prop[i,])
 		p_max_it[i,]           = Nk_it[i,]/sum(Nk_it[i,])
+		
+		
 		
 		#maximize means for tau_prop 
 		sumY                    = Z_prop_max[[i]]%*%y
@@ -583,12 +599,12 @@ OptimizePars <- function(y,tau_prop,pars,PriorPars,parAdd=NULL, cl=NULL){
 		
 		if (is.null(equalVar)){
 			d0_prop                = (Nk_prop[i,]*tau_prop/2+PriorPars[3] )
-			v0_prop                = (tau_prop*SSE/2+PriorPars[4])
+			v0_prop                = tau_prop*SSE/2+PriorPars[4]
 			max_sigma2_prop[i,]    = v0_prop/(d0_prop+1)
 		}else{
 			SSE                    = sum(SSE)
 			d0_prop                = (sum(Nk_prop[i,])*tau_prop/2+PriorPars[3] )
-			v0_prop                = tau_prop*SSE/2+PriorPars[4]  
+			v0_prop                = tau_prop*SSE/2+PriorPars[4] 
 			max_sigma2_prop[i,]    = v0_prop/(d0_prop+1)
 		}
 		
@@ -606,14 +622,14 @@ OptimizePars <- function(y,tau_prop,pars,PriorPars,parAdd=NULL, cl=NULL){
 			#if the model runs with unequal variances
 			# the maximized sigma2 is a vector of length k  
 			d0                     = (Nk_it[i,]*tau/2+PriorPars[3])
-			v0                     = (tau*SSE/2+PriorPars[4])
+			v0                     = tau*SSE/2+PriorPars[4]
 			max_sigma2_it[i,]      = v0/(d0+1)
 		}else{
 			#if the model runs with equal variances 
 			# the maximized sigma2 is a one value
 			SSE                    = sum(SSE)
 			d0                     = (sum(Nk_it[i,])*tau/2+PriorPars[3] )
-			v0                     = (tau*SSE/2+PriorPars[4])
+			v0                     = tau*SSE/2+PriorPars[4]
 			max_sigma2_it[i,]      = v0/(d0+1)
 		}
 		
