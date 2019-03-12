@@ -1,0 +1,12 @@
+This is the example of one parameter model where only mu is sampled and sigma2 is treated as known and fixed to the true value 1.29.
+This exampkke is used to generate the Fig1, to show case of the ridge along the tau axis
+
+Brief descriptions of the files included in this directory:
+
+runST.R                      - run the algorithm
+ST_functions_new.R           - main functions used to run the algorithm by runST.R
+PlotsParamEstimPaper.R       - make plots in the paper (Example 2) and save them into .eps format 
+filledContourFunction1.R     - graphical function
+
+
+

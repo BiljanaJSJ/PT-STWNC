@@ -18,6 +18,7 @@
 library(coda)
 source('../Functions/ST_functions.r')
 source('filledContourFunction1.r')
+source('st_pants.R')
 #burn the first half of the iterations
 
 out_ls= get(load('ST50000.RData'))
@@ -39,7 +40,7 @@ traceplot(as.mcmc(out_ls$PT_chain[[1]][,3]))
 traceplot(as.mcmc(out_ls$PT_chain[[2]][,3]))
 ############################################################################################
 
-low=1000
+low=15000
 up=50000
 
 ############################################################################################
@@ -54,12 +55,13 @@ thmean=rep(NA,up-low)
 
 
 for (i in (1:(up-low))){
-  thmean[i]=(10^(17.53))*(1/(sqrt(2*pi)^(n+1)))*exp(-(1/2)*(mugrid[i]^2))*gamma(n/2+1)*(( (1/2)*sum((y-abs(mugrid[i]))^2)+1)^(-n/2-1))
+  thmean[i]=(10^(17.515))*(1/(sqrt(2*pi)^(n+1)))*exp(-(1/2)*(mugrid[i]^2))*gamma(n/2+1)*(( (1/2)*sum((y-abs(mugrid[i]))^2)+1)^(-n/2-1))
 }
 
 
 plot(mugrid,thmean)
 ############################################################################################
+
 
 ############################################################################################
 #calculate the theoretical mean of sigma2
@@ -69,12 +71,11 @@ b=1/((SSE/2)+1)
 sigmagrid=seq(0.0001,10,length=1000)
 thsigma =rep(NA,1000)
 for (i in (1:1000)){
-  thsigma[i]=(10^(17.85))*(1/(sqrt(2*pi)^(n+1)))*(sigmagrid[i]^(-(n+4)/2))*exp(-1/sigmagrid[i])*exp(-(1/2)*( (sum(y^2)/sigmagrid[i]) - ( (sum(y)/sigmagrid[i])^2)/((n/sigmagrid[i])+1))     ) *sqrt(2*pi)*sqrt(1/((n/sigmagrid[i])+1))
+  thsigma[i]=(10^(17.84))*(1/(sqrt(2*pi)^(n+1)))*(sigmagrid[i]^(-(n+4)/2))*exp(-1/sigmagrid[i])*exp(-(1/2)*( (sum(y^2)/sigmagrid[i]) - ( (sum(y)/sigmagrid[i])^2)/((n/sigmagrid[i])+1))     ) *sqrt(2*pi)*sqrt(1/((n/sigmagrid[i])+1))
 }
 
 plot(sigmagrid,thsigma)
 ############################################################################################
-
 
 
 

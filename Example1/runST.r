@@ -15,6 +15,8 @@
 source('../Functions/ST_functions.r')
 source("ST_pants.r")
 library(truncnorm)
+library(MASS)
+library(coda)
 #generate data
 n=25
 p_mu=1.5

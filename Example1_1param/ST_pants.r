@@ -14,26 +14,8 @@
 ####################################################################
 
 
-library("MASS")
-library(coda)
 
 
-#######################################################
-#color the posterior surface
-#input:  x- posteior surface (kde2d object)
-#output: colors
-#######################################################
-
-surf.colors <- function(x, col = terrain.colors(20)) {
-  # First we drop the 'borders' and average the facet corners
-  # we need (nx - 1)(ny - 1) facet colours!
-  x.avg <- (x[-1, -1] + x[-1, -(ncol(x) - 1)] +
-              x[-(nrow(x) -1), -1] + x[-(nrow(x) -1), -(ncol(x) - 1)]) / 4
-  # Now we construct the actual colours matrix
-  colors = col[cut(x.avg, breaks = length(col), include.lowest = T)]
-  return(colors)
-}
-#######################################################
 
 
 
@@ -61,9 +43,15 @@ dprior_mu=function(x,mean_mu=0,k=1,log=T){
 #                             default is true
 #output:     prior of sigma2 evaluated at x
 ############################################################
-dprior_sig=function(x,SigmaPriorPars,log=T){
-   return(sum(dgamma(1/x,shape=SigmaPriorPars[1],scale=1/SigmaPriorPars[2],log=log)))
-}
+#dprior_sig=function(x,SigmaPriorPars,log=T){
+#    if (log){
+#   ret=log(sum(dinvgamma(x,shape=SigmaPriorPars[1],scale=SigmaPriorPars[2])))
+#   }else{
+#   ret=sum(dinvgamma(x,shape=SigmaPriorPars[1],scale=SigmaPriorPars[2]))
+#   }
+#
+#   return(ret)
+#}
 
 #############################################################
 # loglik:  Tempered Likelihood is Gaussian
@@ -76,10 +64,13 @@ dprior_sig=function(x,SigmaPriorPars,log=T){
 #         log         - TRUE/FALSE should likelihood be evaluated on a log scale or on the original scale
 #         parAdd      - a list of additional parameters, can be either sampled 
 #                       parameteres or additional parameters
+#         mllik_eval  - TRUE/FALSE whether to evaluate untempered likelihood
+#                       needed for marginal likelihood calculation
+#                       by default is FALSE and only lok likelihood is evaluated
 # output:   a list with two elements: out   - tempered likelihood
 #                                     mllik - untempered likelihood
 #############################################################
-loglik=function(x,pars,tau,log=T,parAdd=NULL){
+loglik=function(x,pars,tau,log=T,parAdd=NULL, mllik_eval=FALSE){
   
     if (log==T)
     {
@@ -88,7 +79,10 @@ loglik=function(x,pars,tau,log=T,parAdd=NULL){
     }else{
       out=(prod(dnorm(x,mean=abs(pars[1]),sd=sqrt(pars[2]),log=log))^tau)
     }
+	  mllik    = NULL
+	  if (mllik_eval){
     mllik=sum(dnorm(x,mean=abs(pars[1]),sd=sqrt(pars[2]),log=log)) 
+	  }
     return(list(out=out,mllik=mllik))
 
 }

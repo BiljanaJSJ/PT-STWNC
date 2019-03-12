@@ -19,29 +19,7 @@
 ###################################################################################
 
 
-###################################################################################
-#install packages if they are not installed
-###################################################################################
-checkpackages=function(package){
-  if (!package %in% installed.packages())
-    install.packages(package)
-}
 
-checkpackages("gtools")
-checkpackages("MCMCpack")
-checkpackages("mvtnorm")
-checkpackages("truncnorm")
-checkpackages("optimx")
-checkpackages("coda")
-checkpackages("deSolve")
-# This library lets us sample from a dirichlet
-library(gtools)
-library(MCMCpack)
-library(mvtnorm)
-library(truncnorm)
-library(optimx)
-library(coda)
-library(deSolve)
 
 ###################################################################################
 #Rhat - solution to the ODE 
@@ -76,12 +54,15 @@ Rhat = function(par,times){
 #         log         - TRUE/FALSE should likelihood be evaluated on a log scale or on the original scale
 #         parAdd      - a list of additional parameters, can be either sampled 
 #                       parameteres or additional parameters
+#         mllik_eval  - TRUE/FALSE whether to evaluate untempered likelihood
+#                       needed for marginal likelihood calculation
+#                       by default is FALSE and only lok likelihood is evaluated
 # output:   a list 
 #             out    - tempered likelihood
 #             mllik  - untempered likelihood
 #             R1     - solution of DE at pars 
 #############################################################
-loglik = function(x,pars,tau,parAdd,log=T) {  
+loglik = function(x,pars,tau,parAdd,log=T, mllik_eval=FALSE) {  
 
 	R1      = Rhat(pars,parAdd$times)
 	if (length((which(is.nan(R1[,1]))))>0) return(NA)
@@ -92,8 +73,10 @@ loglik = function(x,pars,tau,parAdd,log=T) {
 	
 	n       = length(I)
         llik    = tau*(sum(dbinom(x,N,R/N,log=log))+dbinom(0,N,I[n]/N,log=log)+dbinom(1,N,I[n-1]/N,log=log))
-        mllik   = sum(dbinom(x,N,R/N,log=log))+dbinom(0,N,I[n]/N,log=log)+dbinom(1,N,I[n-1]/N,log=log)
-
+        mllik    = NULL
+        if (mllik_eval){
+             mllik   = sum(dbinom(x,N,R/N,log=log))+dbinom(0,N,I[n]/N,log=log)+dbinom(1,N,I[n-1]/N,log=log)
+        }
   return(list(out=llik,mllik=mllik,R1=R1))
 }
 ###################################################################################

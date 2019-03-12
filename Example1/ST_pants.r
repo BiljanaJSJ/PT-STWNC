@@ -14,26 +14,8 @@
 ####################################################################
 
 
-library("MASS")
-library(coda)
 
 
-#######################################################
-#color the posterior surface
-#input:  x- posteior surface (kde2d object)
-#output: colors
-#######################################################
-
-surf.colors <- function(x, col = terrain.colors(20)) {
-  # First we drop the 'borders' and average the facet corners
-  # we need (nx - 1)(ny - 1) facet colours!
-  x.avg <- (x[-1, -1] + x[-1, -(ncol(x) - 1)] +
-              x[-(nrow(x) -1), -1] + x[-(nrow(x) -1), -(ncol(x) - 1)]) / 4
-  # Now we construct the actual colours matrix
-  colors = col[cut(x.avg, breaks = length(col), include.lowest = T)]
-  return(colors)
-}
-#######################################################
 
 
 
@@ -76,10 +58,13 @@ dprior_sig=function(x,SigmaPriorPars,log=T){
 #         log         - TRUE/FALSE should likelihood be evaluated on a log scale or on the original scale
 #         parAdd      - a list of additional parameters, can be either sampled 
 #                       parameteres or additional parameters
+#         mllik_eval  - TRUE/FALSE whether to evaluate untempered likelihood
+#                       needed for marginal likelihood calculation
+#                       by default is FALSE and only lok likelihood is evaluated
 # output:   a list with two elements: out   - tempered likelihood
 #                                     mllik - untempered likelihood
 #############################################################
-loglik=function(x,pars,tau,log=T,parAdd=NULL){
+loglik=function(x,pars,tau,log=T,parAdd=NULL, mllik_eval=FALSE){
   
     if (log==T)
     {
@@ -88,7 +73,10 @@ loglik=function(x,pars,tau,log=T,parAdd=NULL){
     }else{
       out=(prod(dnorm(x,mean=abs(pars[1]),sd=sqrt(pars[2]),log=log))^tau)
     }
+	  mllik    = NULL
+	  if (mllik_eval){
     mllik=sum(dnorm(x,mean=abs(pars[1]),sd=sqrt(pars[2]),log=log)) 
+	  }
     return(list(out=out,mllik=mllik))
 
 }
@@ -376,15 +364,15 @@ OptimizePars <- function(y,tau_prop,pars,PriorPars,parAdd=NULL,cl=NULL){
 	
 	#maximize the sigma2 from the posterior mode at tau_prop
 	SSE                = SSEfun(y,mu_prop[i]) 
-	d0_prop            = n*tau_prop/2+PriorPars[3]
+	d0_prop            = n*tau_prop/2+PriorPars[3]-2
 	v0_prop            = tau_prop*SSE/2+PriorPars[4]
-	max_sigma2_prop[i] = v0_prop/(d0_prop+1)
+	max_sigma2_prop[i] = v0_prop/(d0_prop-1)
 	
 	SSE                = SSEfun(y,mu_it[i]) 
 	#maximize the sigma2 from the posterior mode at current tau
-	d0                 = n*pars[3]/2+PriorPars[3]
+	d0                 = n*pars[3]/2+PriorPars[3]-2
 	v0                 = pars[3]*SSE/2+PriorPars[4]
-	max_sigma2_it[i]   = v0/(d0+1)
+	max_sigma2_it[i]   = v0/(d0-1)
 	
 	post_prop[i]  =  posterior_notau(y=y,pars=c(mu_prop[i],max_sigma2_prop[i]),tau=tau_prop,log=T,PriorPars=PriorPars)$output
 	post_it[i]    =  posterior_notau(y=y,pars=c(mu_it[i],max_sigma2_it[i]),tau=pars[3],log=T,PriorPars=PriorPars)$output

@@ -16,14 +16,13 @@
 #this script creates the plots from the paper
 
 library(coda)
-source('../Functions/ST_functions.r')
-source('filledContourFunction1.r')
+source('../Functions/ST_functions.R')
+#source('ST_functions.R')
+source('filledContourFunction1.R')
 #burn the first half of the iterations
 
 out_ls= get(load('ST50000.RData'))
 y     = out_ls$y
-length(which(out_ls$swappers[,3]==1))
-
 ########################################
 #traceplots
 
@@ -39,7 +38,7 @@ traceplot(as.mcmc(out_ls$PT_chain[[1]][,3]))
 traceplot(as.mcmc(out_ls$PT_chain[[2]][,3]))
 ############################################################################################
 
-low=1000
+low=15000
 up=50000
 
 ############################################################################################
@@ -213,7 +212,7 @@ dev.off()
 
 
 library(MASS)
-library(rgl)
+#library(rgl)
 
 
 taugrid = seq(0.000001,1,length=100)
@@ -233,7 +232,7 @@ tau_samples=c(tau_samples, (-1)*tau_samples,2-tau_samples)
 theta_samples=rep(theta_samples,3)
 
 #f1=get(load('f1.RData'))
-f1=kde2d(theta_samples,tau_samples,n=c(500,500))
+f1=kde2d(theta_samples,tau_samples,n=c(1000,1000))
 save(f1,file='f1.RData')
 
 
@@ -246,9 +245,9 @@ save(f1,file='f1.RData')
 #using rgl package create a perspective 3D plot of the joint posterior distribution
 #of (mu,tau)
 #par(mfrow=c(1,1))
-persp3d(f1$x,f1$y[which(f1$y<1 & f1$y>0)],f1$z[,which(f1$y<1 & f1$y>0)],
-       col = color[zcol2],xlab=expression(mu),
-       ylab=expression(tau),zlab="",main=bquote(paste("a.Perspective plot of the joint posterior of" ~ mu ,'and' ~ tau,sep='')))
+#persp3d(f1$x,f1$y[which(f1$y<1 & f1$y>0)],f1$z[,which(f1$y<1 & f1$y>0)],
+ #      col = color[zcol2],xlab=expression(mu),
+  #     ylab=expression(tau),zlab="",main=bquote(paste("a.Perspective plot of the joint posterior of" ~ mu ,'and' ~ tau,sep='')))
 
 
 
@@ -292,7 +291,7 @@ par(mfrow=c(1,2))
 #windows(family='serif')
 persp(f1$x,f1$y[which(f1$y<1 & f1$y>0)],f1$z[,which(f1$y<1 & f1$y>0)],expand=0.8,col= color[facetcol],
       xlab="\u03BC",ltheta = 8, shade = 0.6,border=NA,mgp=c(3,3,3),
-      ylab="\u03c4",ticktype='detailed',theta=140,phi=0,zlab="",
+      ylab="\u03c4",ticktype='detailed',theta=-150,phi=0,zlab="",
       main=bquote(paste("A. Perspective plot of the joint posterior of " ~ mu ,' and ' ~ tau,sep='')),cex.axis=2,cex.lab=2,cex.main=2.5)
 
 # persp(f1$x,f1$y[which(f1$y<1 & f1$y>0)],f1$z[,which(f1$y<1 & f1$y>0)],expand=0.8,col= color[facetcol],
@@ -397,13 +396,11 @@ sigma2_se=sqrt(var(out_ls$PT_chain[[chain]][low:up,1])/(up-low))*sqrt(acfsigma)
 
 #marginal likelihood and acceptance rates
 chain=1
-mean(out_ls$mllik[[chain]][low:up])
-
-mean(c(out_ls$mllik[[1]][low:up],out_ls$mllik[[2]][low:up]))
+mean(c(out_ls$mllik[[2]][low:up],out_ls$mllik[[2]][low:up]))
 
 acc_mu_mu_chain1=sum(out_ls$accepts[[1]][,1]/up)
 acc_mu_sigma_chain1=sum(out_ls$accepts[[1]][,2]/up)
-acc_tau=sum(out_ls$acceptsTau/up)
+acc_tau=(out_ls$acceptsTau[1]/up)
 acc_mu_mu_chain2=sum(out_ls$accepts[[2]][,1]/up)
 acc_mu_sigma_chain2=sum(out_ls$accepts[[2]][,2]/up)
 

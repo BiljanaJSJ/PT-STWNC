@@ -19,9 +19,14 @@
 
 
 #source("ST_functions_new.r")
-source("../../functions/ST_functions.R")
+#source("ST_functions.R")
+source('../../Functions/ST_functions.R')
 source("../ST_pants.r")
 library(truncnorm)
+library("MASS")
+library(coda)
+library(MCMCpack)
+
 
 
 mllik=rep(NA,20)
@@ -42,6 +47,8 @@ for (i in (1:20)){
 ##out_ls=get(load(paste('mllik',i,'.RData',sep='')))
 
 out_ls=runST(niter=35000,y=y,PriorPars=c(0,1,1,1),IniPar=c(-0.8,0.2,0.5),tune_pars_init=c(0.15,0.1),ttune_pars=c(rep(TRUE,2)))
+
+save(out_ls,file=paste('mllik',i,'.RData',sep=''))
 
 
 tau_samples=c(out_ls$PT_chain[[1]][low:up,3],rep(1,length(out_ls$PT_chain[[1]][low:up,3])))
@@ -83,9 +90,9 @@ tau_samples=list()
 mloglik_samples=list()
 
 for (i in (1:20)){
-#out_ls=get(load(paste('mllik',i,'.RData',sep='')))
+out_ls=get(load(paste('mllik',i,'.RData',sep='')))
 
-out_ls=runST(niter=35000,y=y,PriorPars=c(0,1,1,1),IniPar=c(-0.8,0.2,0.5),tune_pars_init=c(0.15,0.1),ttune_pars=c(rep(TRUE,2)))
+#out_ls=runST(niter=35000,y=y,PriorPars=c(0,1,1,1),IniPar=c(-0.8,0.2,0.5),tune_pars_init=c(0.15,0.1),ttune_pars=c(rep(TRUE,2)))
 
 tau_samples[[i]]=c(out_ls$PT_chain[[1]][low:up,3],rep(1,length(out_ls$PT_chain[[1]][low:up,3])))
 #mloglik_samples[[i]]=c(out_ls$mllik[[1]][low:up],out_ls$mllik[[2]][low:up])
