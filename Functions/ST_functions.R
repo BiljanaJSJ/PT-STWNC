@@ -13,6 +13,30 @@
 #                b.stojkova@stat.ubc.ca
 ####################################################################
 
+#########################################################
+#List of functions in this file
+
+#1.runST            - runs the PT-STWNC algorithm
+#2.initialization   - initializes the PT-STWNC algorithm
+#3.STstep_tau       - samples the auxiliary parameter tau  
+#########################################################
+
+
+#########################################################
+#User specified functions needed for the runST function
+
+#1.loglik          - tempered log likelihood
+#2.mloglik         - unitempered log likelihood
+#3.STstep_pars     - sample parameters of interest
+#4.OptimizePars    - optimize parameters of interest at 
+#                    current tau  and proposed tau 
+#5.posterior_notau - tempered posterior distribution
+#                    without prior for tau
+#########################################################
+
+
+
+
 ######################################################################################
 #STstep_tau: Transition step two of the STWTDNC:
 #            update tau with fixed parameters
@@ -116,8 +140,6 @@ STstep_tau = function(pars,tau,y,PriorPars,acc=accepts1,tune=NULL,parAdd=NULL, c
 #                          parameteres or additional parameters
 #Output:      a list
 #             log_r_bot        - a chain of posterior evaluations for updating the parameters
-#             log_r_bot1       - a chain of posterior evaluations for updating tau
-#             log_r_top1       - a chain of posterior evaluations for updating tau
 #             accepts          - counts of accepted updates of the parameters
 #             acceptsTau       - counts of accepted updates of tau
 #             acc_rate         - acceptance rate of the parameters
@@ -137,14 +159,14 @@ STstep_tau = function(pars,tau,y,PriorPars,acc=accepts1,tune=NULL,parAdd=NULL, c
 
 initialization=function(niter,nstops,kp1,tune_pars_init,IniPar,nchains,ttau,parAdd){
 	
-   	  npar              = length(IniPar)-1
+    npar              = length(IniPar)-1
 		#intialize the algorithm for the first run
-      log_r_bot         = list()
+    log_r_bot         = list()
  	  log_r_bot[[1]]    = rep(0,niter)
  	  log_r_bot[[2]]    = rep(0,niter)
 	
-		log_r_bot1       = rep(0,niter)
-		log_r_top1       = rep(0,niter)
+		# log_r_bot1       = rep(0,niter)
+		# log_r_top1       = rep(0,niter)
 		
 		accepts          = list()
 		accepts[[1]]     = matrix(1,nstops,npar)
@@ -155,17 +177,17 @@ initialization=function(niter,nstops,kp1,tune_pars_init,IniPar,nchains,ttau,parA
 		acc_rate[[1]]     = matrix(1,nstops,npar)
 		acc_rate[[2]]     = matrix(1,nstops,npar)
 		
-        kp                  = list()
-        kp[[1]]             = rep(kp1,npar)
-        kp[[2]]             = rep(kp1,npar)
+         kp                  = list()
+         kp[[1]]             = rep(kp1,npar)
+         kp[[2]]             = rep(kp1,npar)
     
-
+		#kp                = rep(kp1,npar)
     
 
 		acceptsTau        = rep(1,nstops)
 		acc_rate1         = rep(1,nstops)
 		
-		tau_prop          = rep(0,niter) 
+	#	tau_prop          = rep(0,niter) 
 		
 		# tune_q2            = list()
 		# tune_q2[[1]]       = rep(NA,niter)
@@ -179,12 +201,22 @@ initialization=function(niter,nstops,kp1,tune_pars_init,IniPar,nchains,ttau,parA
 		# tune_q1[[1]][1]    = q1[1]
 		# tune_q1[[2]][1]    = q1[1]
 		
-		tune_pars            = list()
-		tune_pars[[1]]       = matrix(NA,niter,ncol=npar)
-		tune_pars[[2]]       = matrix(NA,niter,ncol=npar)
+		# tune_pars            = list()
+		# tune_pars[[1]]       = matrix(NA,niter,ncol=npar)
+		# tune_pars[[2]]       = matrix(NA,niter,ncol=npar)
+		# 
+		# tune_pars[[1]][1,]   = tune_pars_init
+		# tune_pars[[2]][1,]   = tune_pars_init
+		
+		
+		tune_pars          = list()
+		tune_pars[[1]]     = matrix(NA,nstops,npar)
+		tune_pars[[2]]     = matrix(NA,nstops,npar)
 		
 		tune_pars[[1]][1,]   = tune_pars_init
 		tune_pars[[2]][1,]   = tune_pars_init
+		
+		
 		
 		
 		PT_chain           = list()
@@ -206,19 +238,20 @@ initialization=function(niter,nstops,kp1,tune_pars_init,IniPar,nchains,ttau,parA
 		parAdd_chain[[2]]  = parAdd
 		
 		
-		tunetau            = rep(NA,niter)
+		# tunetau            = rep(NA,niter)
+		# tunetau[1]         = ttau[1]
+		
+		tunetau            = rep(NA,nstops)
 		tunetau[1]         = ttau[1]
-		
-		
 
 	return(list(log_r_bot        = log_r_bot,
-							log_r_bot1       = log_r_bot1,
-							log_r_top1       = log_r_top1,
+							# log_r_bot1       = log_r_bot1,
+							# log_r_top1       = log_r_top1,
 							accepts          = accepts,
 							acceptsTau       = acceptsTau,
 							acc_rate         = acc_rate,
 							acc_rate1        = acc_rate1,
-							tau_prop         = tau_prop,
+					#		tau_prop         = tau_prop,
 							mllik            = mllik,
 							PT_chain         = PT_chain,
 							swappers         = swappers,
@@ -259,8 +292,6 @@ initialization=function(niter,nstops,kp1,tune_pars_init,IniPar,nchains,ttau,parA
 #             rate1            - acceptance rate of tau
 #             accepts          - counts of accepted updates of the parameters
 #             acceptsTau       - counts of accepted updates of tau
-#             log_r_bot        - a chain of posterior evaluations for updating the parameters
-#             log_r_bot1       - a chain of posterior evaluations for updating tau
 #             kp               - starts the counts of accepted values divided into nstop
 #                                number of stops for parameters of interest
 #             y                - data
@@ -273,7 +304,7 @@ initialization=function(niter,nstops,kp1,tune_pars_init,IniPar,nchains,ttau,parA
 #             tune_q2          - tunning chain for the variance of the transition kernerl of the second parameter
 ######################################################################################
 
-runST=function(niter = 500,y,PriorPars,IniPar,tune_pars_init,ttune_pars,nstops=20,kp1=1,kptau=1, nchains=2,ttau=c(NA, FALSE),parAdd=NULL, cl=NULL){
+runST=function(niter = 500,y,PriorPars,IniPar,tune_pars_init,ttune_pars,nstops=20,kp1=1,kptau=1, nchains=2,ttau=c(NA, FALSE),parAdd=NULL, cl=NULL, whichTune=NULL){
 
 
 	#start the PT with two chains
@@ -284,14 +315,14 @@ runST=function(niter = 500,y,PriorPars,IniPar,tune_pars_init,ttune_pars,nstops=2
 	     
 	
 	log_r_bot          = init$log_r_bot
-	log_r_bot1         = init$log_r_bot1
-	log_r_top1         = init$log_r_top1
+	# log_r_bot1         = init$log_r_bot1
+	# log_r_top1         = init$log_r_top1
 
 	accepts            = init$accepts
 	acceptsTau         = init$acceptsTau
 	acc_rate           = init$acc_rate
 	acc_rate1          = init$acc_rate1
-	tau_prop           = init$tau_prop  
+#	tau_prop           = init$tau_prop  
 	mllik              = init$mllik
 	PT_chain           = init$PT_chain
 	swappers           = init$swappers
@@ -375,7 +406,7 @@ runST=function(niter = 500,y,PriorPars,IniPar,tune_pars_init,ttune_pars,nstops=2
 											            PriorPars=PriorPars,
 											            y=y,log_r_bot=log_r_bot[[chain]][iter-1],
 											            acc= sapply(1:npar,function(x){accepts[[chain]][kp[[chain]][x],x]}),
-											            tune_pars=tune_pars[[chain]][iter-1,],
+											            tune_pars=sapply(1:npar,function(x){tune_pars[[chain]][kp[[chain]][x],x]}),
 											            ttune_pars = ttune_pars,
 											            parAdd=parAdd_chain[[chain]])
 			
@@ -400,7 +431,7 @@ runST=function(niter = 500,y,PriorPars,IniPar,tune_pars_init,ttune_pars,nstops=2
 									              PriorPars=PriorPars,
 									              acc=acceptsTau[kptau],
 									              parAdd=parAdd_chain[[chain]],
-									              tune=tunetau[iter-1],
+									              tune=tunetau[kptau],
 									              cl=cl)
 				
 			},
@@ -418,9 +449,9 @@ runST=function(niter = 500,y,PriorPars,IniPar,tune_pars_init,ttune_pars,nstops=2
 			(PT_chain[[chain]][iter,]  = out1$theta)
 			
 			acceptsTau[kptau]          = out1$accepts1
-			log_r_bot1[iter]           = out1$log_r_bot
-			tau_prop[iter]             = out1$tau_prop
-			log_r_top1[iter]           = out1$log_r_top1
+	#		log_r_bot1[iter]           = out1$log_r_bot
+	#		tau_prop[iter]             = out1$tau_prop
+	#		log_r_top1[iter]           = out1$log_r_top1
 			
 			
 			}else{
@@ -428,9 +459,9 @@ runST=function(niter = 500,y,PriorPars,IniPar,tune_pars_init,ttune_pars,nstops=2
 
 				(PT_chain[[chain]][iter,]  = PT_chain[[chain]][iter-1,])
 				
-				log_r_bot1[iter]           = log_r_bot1[iter-1]
-				tau_prop[iter]             = tau_prop[iter-1]
-				log_r_top1[iter]           = log_r_top1[iter-1]
+			#	log_r_bot1[iter]           = log_r_bot1[iter-1]
+			#	tau_prop[iter]             = tau_prop[iter-1]
+			#	log_r_top1[iter]           = log_r_top1[iter-1]
 				
 			}
 			
@@ -444,18 +475,18 @@ runST=function(niter = 500,y,PriorPars,IniPar,tune_pars_init,ttune_pars,nstops=2
 							    				PriorPars=PriorPars,
 									   		  y=y,log_r_bot=log_r_bot[[chain]][iter-1],
 											    acc=sapply(1:npar,function(x){accepts[[chain]][kp[[chain]][x],x]}),
-											    tune_pars=tune_pars[[chain]][iter-1,],
+											    tune_pars=sapply(1:npar,function(x){tune_pars[[chain]][kp[[chain]][x],x]}),
 											    ttune_pars = ttune_pars,
 											    parAdd=parAdd_chain[[chain]])
 			
 			
 			(PT_chain[[chain]][iter,]                    = out2$theta)
 			#mu_last                                      = PT_chain[[chain]][iter-1,1]
-		#	accepts[[chain]][kp[[chain]],]               = out$accepts
+		#	accepts[[chain]][kp[[chain]][[chain]],]               = out$accepts
 			for (i in (1:npar)){
-				accepts[[chain]][kp[[chain]][i], i]      = out2$accepts[i]
+				accepts[[chain]][kp[[chain]][i], i]                = out2$accepts[i]
 			}
-			#accepts[[chain]][kp[[chain]][2],2]           = out$accepts[2]
+			#accepts[[chain]][kp[[chain]][[chain]][2],2]           = out$accepts[2]
 			log_r_bot[[chain]][iter]                     = out2$log_r_bot
 					
 	  	    if (!is.null(parAdd)){
@@ -466,7 +497,7 @@ runST=function(niter = 500,y,PriorPars,IniPar,tune_pars_init,ttune_pars,nstops=2
 
 		#calculate the marginal likelihood for the two chains
 		for (chain in (1:nchains)){
-		mllik[[chain]][iter]    = loglik(x=y,pars=PT_chain[[chain]][iter,(1:npar)],tau=PT_chain[[chain]][iter,npar+1],log=T,parAdd=parAdd_chain[[chain]])$mllik
+		mllik[[chain]][iter]    = loglik(x=y,pars=PT_chain[[chain]][iter,(1:npar)],tau=PT_chain[[chain]][iter,npar+1],log=T,parAdd=parAdd_chain[[chain]], mllik_eval=T)$mllik
 		}
 		# chain=2
 		# mllik[[chain]][iter]    = loglik(x=y,pars=PT_chain[[chain]][iter,(1:npar)],tau=PT_chain[[chain]][iter,npar+1],log=T,parAdd=parAdd_chain[[chain]])$mllik
@@ -475,30 +506,32 @@ runST=function(niter = 500,y,PriorPars,IniPar,tune_pars_init,ttune_pars,nstops=2
 		
 		for (chain in (1:nchains)){
 			
-			tune_pars[[chain]][iter,]  = tune_pars[[chain]][iter-1,]
 		
 			for (i in (1:npar)){
 				
 				
-			if (iter== kp[[chain]][i]*niter/nstops){  
-			
+			if ((iter== kp[[chain]][i]*niter/nstops) & (iter!=niter)) {  
+			 	  
+				
 			   acc_rate[[chain]][kp[[chain]][i],i]    = (accepts[[chain]][kp[[chain]][i],i]+1)/(2+(niter/nstops));				
 			   kp[[chain]][i]                         =  kp[[chain]][i]+1;
+			   tune_pars[[chain]][kp[[chain]][i],i]   = tune_pars[[chain]][kp[[chain]][i]-1,i]
 			   
-			   if (ttune_pars[i]){
+			   if ((ttune_pars[i]) & (iter< niter/2)) {
 			   	
-			   if(iter< niter/2){
+			   #if(iter< niter/2){
 					
 					if(acc_rate[[chain]][kp[[chain]][i]-1,i]>.29 || acc_rate[[chain]][kp[[chain]][i]-1,i]<.19 ){
 						# adjust the transition density if we are in the first half of the iterations. 
                         				
 						#tune transition step  tune_pars
-						tune_pars[[chain]][iter,i] = tune_pars[[chain]][iter,i]*acc_rate[[chain]][kp[[chain]][i]-1,i]/.24
+						#tune_pars[[chain]][iter,i] = tune_pars[[chain]][iter,i]*acc_rate[[chain]][kp[[chain]][[chain]][i]-1,i]/.24
+						tune_pars[[chain]][kp[[chain]][i],i] = tune_pars[[chain]][kp[[chain]][i],i]*acc_rate[[chain]][kp[[chain]][i]-1,i]/.24
 						}
 						
 					}
 					
-			   }
+			  # }
 			}
 			}
 			
@@ -507,17 +540,19 @@ runST=function(niter = 500,y,PriorPars,IniPar,tune_pars_init,ttune_pars,nstops=2
 				
 				
 
-		tunetau[iter]                              = tunetau[iter-1]
 		
 		
-		if (iter == kptau*niter/nstops){  
+		if ((iter == kptau*niter/nstops) & (iter!=niter)) {  
+			
+			
 			acc_rate1[kptau]                       = (acceptsTau[kptau]+1)/(2+(niter/nstops));
 			kptau                                  =  kptau+1;
+			tunetau[kptau]                         = tunetau[kptau-1]
 			# adjust the transition density if we are in the first half of the iterations. 
 			if (ttau[2]){
 			if(iter< niter/2){
-				if(acc_rate1[kptau-1]>.19 || acc_rate1[kptau-1]<.9 ){
-					tunetau[iter]          = tunetau[iter]*acc_rate1[kptau-1]/.14
+				if(acc_rate1[kptau-1]>.28 || acc_rate1[kptau-1]<.18 ){
+					tunetau[kptau]          = tunetau[kptau]*acc_rate1[kptau-1]/.23
 				}
 			}
 		}
@@ -525,16 +560,16 @@ runST=function(niter = 500,y,PriorPars,IniPar,tune_pars_init,ttune_pars,nstops=2
 		#     write the output at every 1000-th iterations
 		#     save all the sampled parameters and make some plots
 		if ((iter %% 1000) == 0) {
-			out_ls=list(PT_chain=PT_chain,rate=acc_rate,rate1=acc_rate1,accepts=accepts,acceptsTau=acceptsTau,log_r_bot=log_r_bot,log_r_bot1=log_r_bot1,
-									kp=kp,y=y,tau_prop=tau_prop,log_r_top=log_r_top1,mllik=mllik,swappers=swappers,tunetau=tunetau,tune_pars=tune_pars,parAdd_chain=parAdd_chain)
+			out_ls=list(PT_chain=PT_chain,rate=acc_rate,rate1=acc_rate1,accepts=accepts,acceptsTau=acceptsTau,log_r_bot=log_r_bot,
+									kp=kp,y=y,mllik=mllik,swappers=swappers,tunetau=tunetau,tune_pars=tune_pars,parAdd_chain=parAdd_chain)
 			
 			save(out_ls, file=paste("ST",iter,".RData",sep=""))
 		 }
 		 
 	}
 	
-	return(list(PT_chain=PT_chain,rate=acc_rate,rate1=acc_rate1,accepts=accepts,acceptsTau=acceptsTau,log_r_bot=log_r_bot,log_r_bot1=log_r_bot1,
-							kp=kp,y=y,tau_prop=tau_prop,log_r_top=log_r_top1,mllik=mllik,swappers=swappers,tunetau=tunetau,tune_pars=tune_pars,parAdd_chain=parAdd_chain))
+	return(list(PT_chain=PT_chain,rate=acc_rate,rate1=acc_rate1,accepts=accepts,acceptsTau=acceptsTau,log_r_bot=log_r_bot,
+							kp=kp,y=y,mllik=mllik,swappers=swappers,tunetau=tunetau,tune_pars=tune_pars,parAdd_chain=parAdd_chain))
 }
 ######################################################################################
 #END!!

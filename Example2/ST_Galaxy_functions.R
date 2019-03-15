@@ -1,3 +1,5 @@
+
+
 ####################################################################
 #article title:  Parallel Tempering via Simulated Tempering Without 
 #                Normalizing Constants
@@ -470,7 +472,7 @@ for (l in (1:k)){
   
   sigma2_prop            = sigma2
   logsig_prop            = log(sigma2)
-  logsig_prop            = rnorm(1,log(sigma2),tune_pars[pars_tune[l]])
+  logsig_prop            = rnorm(1,log(sigma2),tune_pars[pars_tune])
   sigma2_prop            = exp(logsig_prop)
   
   pars_prop              = pars
@@ -549,28 +551,29 @@ OptimizePars <- function(y,tau_prop,pars,PriorPars,parAdd=NULL, cl=NULL){
 	eps=10^-2
 	for (i in (2:N)){
 
-	         Z_prop_max[[i]]	= matrix(0,dim(Z)[1],dim(Z)[2])
-	                 # distances=t(sapply(1:k,function(x){ dnorm(y,max_means_prop[i-1,x],sqrt(max_sigma2_prop[i-1,x]))}))
-	                 # ind=sapply(1:ncol(distances), function(x) {distances[,x] %in% min(distances[,x])})
-	                 # Z_prop_max[[i]][ind]=1
-		          # #resample Z for the maximized means, sigma2 and p at tau_prop
+	         #Z_prop_max[[i]]	= matrix(0,dim(Z)[1],dim(Z)[2])
+	            # distances=t(sapply(1:k,function(x){ dnorm(y,max_means_prop[i-1,x],sqrt(max_sigma2_prop[i-1,x]))}))
+	            # ind=sapply(1:ncol(distances), function(x) {distances[,x] %in% min(distances[,x])})
+	            # Z_prop_max[[i]][ind]=1
+		    # #resample Z for the maximized means, sigma2 and p at tau_prop
 		 fmpij                  = mpij(y,means=max_means_prop[i-1,],sigma2=max_sigma2_prop[i-1,],p=p_max_prop[i-1,])
-		 pij                    = t(exp(fmpij)/apply(exp(fmpij),1,sum))
-                 ind                    = sapply(1:ncol(pij), function(x) {pij[,x] %in% max(pij[,x])})
-                 Z_prop_max[[i]][ind]   = 1
+		 pij                    = exp(fmpij)/apply(exp(fmpij),1,sum)
+                 #pij                    = t(exp(fmpij)/apply(exp(fmpij),1,sum))
+                 #ind                    = sapply(1:ncol(pij), function(x) {pij[,x] %in% max(pij[,x])})
+                 #Z_prop_max[[i]][ind]   = 1
 
-		# Z_prop_max[[i]]        = sampleZ(pij)
-		# 
-	Nk_prop[i,]            = apply(Z_prop_max[[i]],1,sum)
-		    # 
-		    # 
-		# #resample Z for the maximized means, sigma2 and p at current tau
-                 Z_it_max[[i]]    	= matrix(0,dim(Z)[1],dim(Z)[2])
+		  Z_prop_max[[i]]        = sampleZ(pij)
+		        
+	         Nk_prop[i,]            = apply(Z_prop_max[[i]],1,sum)
+		     
+		 # #resample Z for the maximized means, sigma2 and p at current tau
+                 #Z_it_max[[i]]    	= matrix(0,dim(Z)[1],dim(Z)[2])
 		 fmpij                  = mpij(y,means=max_means_it[i-1,],sigma2=max_sigma2_it[i-1,],p=p_max_it[i-1,])
-		 pij                    = t(exp(fmpij)/apply(exp(fmpij),1,sum))
-		       # Z_it_max[[i]]          = sampleZ(pij)
-		 ind                    = sapply(1:ncol(pij), function(x) {pij[,x] %in% max(pij[,x])})
-                 Z_it_max[[i]][ind]     = 1
+		 #pij                    = t(exp(fmpij)/apply(exp(fmpij),1,sum))
+                 pij                    = exp(fmpij)/apply(exp(fmpij),1,sum)
+		 Z_it_max[[i]]          = sampleZ(pij)
+		 #ind                    = sapply(1:ncol(pij), function(x) {pij[,x] %in% max(pij[,x])})
+                 #Z_it_max[[i]][ind]     = 1
 
 
 		
@@ -604,7 +607,7 @@ OptimizePars <- function(y,tau_prop,pars,PriorPars,parAdd=NULL, cl=NULL){
 		}else{
 			SSE                    = sum(SSE)
 			d0_prop                = (sum(Nk_prop[i,])*tau_prop/2+PriorPars[3] )
-			v0_prop                = tau_prop*SSE/2+PriorPars[4] 
+			v0_prop                = tau_prop*SSE/2+PriorPars[4]
 			max_sigma2_prop[i,]    = v0_prop/(d0_prop+1)
 		}
 		

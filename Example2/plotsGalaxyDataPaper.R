@@ -78,16 +78,16 @@ par(mgp=c(5,1,0))
 layout(matrix(c(1,2,3,4,5,6),2,3))
 par(oma=c(4,4,rep(4,2))+0.05,mar=c(7,7,7,7))
 
-plot(mu_chain2,col=rgb(1,0,0),ylim=c(0,0.3),main=expression(mu [1]),
-     cex.main=3.5,cex.axis=2,lwd=5,lty=1,ylab='Density',xlab=expression(mu [1]),cex.lab=3)
-lines(mu_chain1,col='darkgrey',lty=1,lwd=3)
+plot(mu2_chain2,col=rgb(1,0,0),ylim=c(0,0.3),main=expression(mu [2]),
+     cex.main=3.5,cex.axis=2,lwd=5,lty=1,ylab='Density',xlab=expression(mu [2]),cex.lab=3)
+lines(mu2_chain1,col='darkgrey',lty=1,lwd=3)
 
-bivn.kde <- kde2d(out_ls$PT_chain[[1]][low:up,1], out_ls$PT_chain[[1]][low:up,3])
+bivn.kde <- kde2d(out_ls$PT_chain[[1]][low:up,2], out_ls$PT_chain[[1]][low:up,3])
 
-plot(x = 0, y = 0, type = "n",cex.axis=2, xlim = range(bivn.kde$x), ylim = range(bivn.kde$y), xlab=expression(mu [2]),ylab=expression(mu [3]),main=expression(paste(mu [1],' and ',mu [3],sep='')),cex.main=3.5,cex.lab=3)
+plot(x = 0, y = 0, type = "n",cex.axis=2, xlim = range(bivn.kde$x), ylim = range(bivn.kde$y), xlab=expression(mu [2]),ylab=expression(mu [3]),main=expression(paste(mu [2],' and ',mu [3],sep='')),cex.main=3.5,cex.lab=3)
 contour(bivn.kde,col='darkgrey',add=T,axes=F,lwd=3,lty=1,labels='')
 
-bivn.kde_target <- kde2d(out_ls$PT_chain[[2]][low:up,1], out_ls$PT_chain[[2]][low:up,3],n=20)
+bivn.kde_target <- kde2d(out_ls$PT_chain[[2]][low:up,2], out_ls$PT_chain[[2]][low:up,3],n=20)
 contour(bivn.kde_target,col=rgb(1,0,0),add=TRUE,axes=F,lwd=5,labels='',nlevels = 80,levels = pretty(range(bivn.kde_target$z), 70))
 # plot(x = out_ls$PT_chain[[1]][low:up,2], y = out_ls$PT_chain[[1]][low:up,3],cex.axis=2,  xlab=expression(mu [2]),ylab=expression(mu [3]),main=expression(paste(mu [2],' and ',mu [3],sep='')),cex.main=3.5,cex.lab=3,col='darkgrey')
 # par(new=TRUE)
@@ -99,8 +99,8 @@ plot(mu3_chain2,col=rgb(1,0,0),ylim=c(0,0.3),main=expression(mu [3]),
 lines(mu3_chain1,col='darkgrey',lty=1,lwd=3)
 
 
-plot(sigma2_chain2,col=rgb(1,0,0),main=expression(sigma [1]^2),
-     cex.main=3.5,cex.axis=2,lwd=5,lty=1,ylab='Density',xlab=expression(sigma [1]^2),cex.lab=3)
+plot(sigma2_chain2,col=rgb(1,0,0),main=expression(sigma [2]^2),
+     cex.main=3.5,cex.axis=2,lwd=5,lty=1,ylab='Density',xlab=expression(sigma [2]^2),cex.lab=3)
 
 lines(sigma2_chain2,col='darkgrey',lty=1,lwd=3)
 

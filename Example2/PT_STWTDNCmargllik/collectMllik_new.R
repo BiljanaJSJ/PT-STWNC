@@ -20,8 +20,8 @@
 low = 17500
 up  = 35000
 
-listfolders=list.files('/zfs/users/b.stojkova/b.stojkova/PT-STWNC/Example2_Feb12019/PT_STWTDNCmargllik', full.names = TRUE)
-n=listfolders[5:9]
+listfolders=list.files('/zfs/users/b.stojkova/b.stojkova/PT-STWNC/Example12_March12/PT_STWTDNCmargllik', full.names = TRUE)
+n=listfolders[4:8]
 mllik=matrix(NA,up-low+1,20)
 mllik_se=mllik_se1=rep(NA,20)
 

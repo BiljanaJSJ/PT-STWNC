@@ -19,9 +19,9 @@ source('ST_Galaxy_functions.R')
 library(MASS)
 library(MCMCpack)
 library(truncnorm)
-#library(LaplacesDemon)
 
-set.seed(2555)
+
+
 t1=proc.time()[1]
 
 k1=3

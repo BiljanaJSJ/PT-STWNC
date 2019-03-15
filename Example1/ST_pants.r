@@ -16,9 +16,6 @@
 
 
 
-
-
-
 #######################################################
 #prior_mu
 # mu is N(mean_mu,k^2) distributed
@@ -44,7 +41,16 @@ dprior_mu=function(x,mean_mu=0,k=1,log=T){
 #output:     prior of sigma2 evaluated at x
 ############################################################
 dprior_sig=function(x,SigmaPriorPars,log=T){
-   return(sum(dgamma(1/x,shape=SigmaPriorPars[1],scale=1/SigmaPriorPars[2],log=log)))
+
+   if (log){
+   ret=log(sum(dinvgamma(x,shape=SigmaPriorPars[1],scale=SigmaPriorPars[2])))
+   }else{
+   ret=sum(dinvgamma(x,shape=SigmaPriorPars[1],scale=SigmaPriorPars[2]))
+   }
+
+   return(ret)
+
+   #return(sum(dgamma(1/x,shape=SigmaPriorPars[1]+2,scale=1/SigmaPriorPars[2],log=log)))
 }
 
 #############################################################
@@ -364,15 +370,15 @@ OptimizePars <- function(y,tau_prop,pars,PriorPars,parAdd=NULL,cl=NULL){
 	
 	#maximize the sigma2 from the posterior mode at tau_prop
 	SSE                = SSEfun(y,mu_prop[i]) 
-	d0_prop            = n*tau_prop/2+PriorPars[3]-2
+	d0_prop            = n*tau_prop/2+PriorPars[3]
 	v0_prop            = tau_prop*SSE/2+PriorPars[4]
-	max_sigma2_prop[i] = v0_prop/(d0_prop-1)
+	max_sigma2_prop[i] = v0_prop/(d0_prop+1)
 	
 	SSE                = SSEfun(y,mu_it[i]) 
 	#maximize the sigma2 from the posterior mode at current tau
-	d0                 = n*pars[3]/2+PriorPars[3]-2
+	d0                 = n*pars[3]/2+PriorPars[3]
 	v0                 = pars[3]*SSE/2+PriorPars[4]
-	max_sigma2_it[i]   = v0/(d0-1)
+	max_sigma2_it[i]   = v0/(d0+1)
 	
 	post_prop[i]  =  posterior_notau(y=y,pars=c(mu_prop[i],max_sigma2_prop[i]),tau=tau_prop,log=T,PriorPars=PriorPars)$output
 	post_it[i]    =  posterior_notau(y=y,pars=c(mu_it[i],max_sigma2_it[i]),tau=pars[3],log=T,PriorPars=PriorPars)$output

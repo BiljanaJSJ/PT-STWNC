@@ -18,7 +18,7 @@
 #sum_i_{1_M} sum_j_{1_ni} log(P(Y | theta_i_j)) [ti+1-ti]
 
 source('../../ST_Galaxy_functions.R')
-source('../../ST_functions.R')
+source('../../../Functions/ST_functions.R')
 
 library(MASS)
 library(MCMCpack)
@@ -42,7 +42,7 @@ y                  = data/1000 ## normalize the data
 n                  = length(y)
 
 
-fmpij      = mpij(y=y,means=rep(20,k1),sigma2=rep(0.5,k1),p=rep(1/k1,k1),tau=0.5)
+fmpij      = mpij(y=y,means=rep(20,k1),sigma2=0.5,p=rep(1/k1,k1))
 pij        = exp(fmpij)/apply(exp(fmpij),1,sum)
 Z          = sampleZ(pij)
 
@@ -128,7 +128,7 @@ tau_int           = diff(uniqueTau)
 library(doParallel)
 cl <- makeCluster(4)
 registerDoParallel(cl)
-clusterCall(cl,function(x) {source('../../ST_Galaxy_functions.R');source('../../ST_functions.R')})
+clusterCall(cl,function(x) {source('../../ST_Galaxy_functions.R');source('../../../Functions/ST_functions.R')})
 clusterExport(cl,varlist=ls())
 
 indicesUniqueTau  = parLapply(cl,1:length(uniqueTau),function(x){ which(tau_samples==uniqueTau[x]) })
