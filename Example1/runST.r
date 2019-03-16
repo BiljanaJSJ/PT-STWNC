@@ -18,7 +18,7 @@ library(truncnorm)
 library("MASS")
 library(coda)
 library(MCMCpack)
-#library(LaplacesDemon)
+
 
 
 #generate data
