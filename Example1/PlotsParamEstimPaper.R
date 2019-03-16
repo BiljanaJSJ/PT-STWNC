@@ -53,15 +53,18 @@ sd_th=sqrt(var(y)/(n+var(y)))
 mugrid=seq(-3,3,length=up-low)
 thmean=rep(NA,up-low)
 
-
 for (i in (1:(up-low))){
-  thmean[i]=(10^(17.515))*(1/(sqrt(2*pi)^(n+1)))*exp(-(1/2)*(mugrid[i]^2))*gamma(n/2+1)*(( (1/2)*sum((y-abs(mugrid[i]))^2)+1)^(-n/2-1))
+  thmean[i]=(10^(17.177))*(1/(sqrt(2*pi)^(n+1)))*exp(-(1/2)*(mugrid[i]^2))*gamma(n/2+1)*(( (1/2)*sum((y-abs(mugrid[i]))^2)+1)^(-n/2-1))
 }
 
 
 plot(mugrid,thmean)
 ############################################################################################
-
+# plot(chain2mu,col=rgb(1,0,0),ylim=c(0,1.2),xlim=c(-2,2),xlab='',ylab='',main=expression(mu),
+# 		 cex.main=3.5,cex.axis=3,cex.lab=3,lwd=6.5,lty=1)
+# 
+# lines(mugrid,thmean,col='darkblue',lwd=3,lty=18)
+# 
 
 
 ############################################################################################
@@ -72,12 +75,15 @@ b=1/((SSE/2)+1)
 sigmagrid=seq(0.0001,10,length=1000)
 thsigma =rep(NA,1000)
 for (i in (1:1000)){
-  thsigma[i]=(10^(17.84))*(1/(sqrt(2*pi)^(n+1)))*(sigmagrid[i]^(-(n+4)/2))*exp(-1/sigmagrid[i])*exp(-(1/2)*( (sum(y^2)/sigmagrid[i]) - ( (sum(y)/sigmagrid[i])^2)/((n/sigmagrid[i])+1))     ) *sqrt(2*pi)*sqrt(1/((n/sigmagrid[i])+1))
+  thsigma[i]=(10^(17.56))*(1/(sqrt(2*pi)^(n+1)))*(sigmagrid[i]^(-(n+4)/2))*exp(-1/sigmagrid[i])*exp(-(1/2)*( (sum(y^2)/sigmagrid[i]) - ( (sum(y)/sigmagrid[i])^2)/((n/sigmagrid[i])+1))     ) *sqrt(2*pi)*sqrt(1/((n/sigmagrid[i])+1))
 }
 
 plot(sigmagrid,thsigma)
 ############################################################################################
 
+# plot(densSg2_1$x,densSg2_1$y,col=rgb(1,0,0),xlim=c(0,10),ylim=c(0,1.7),xlab='',
+# 		 ylab='',main=expression(sigma^2),cex.main=3.5,cex.axis=3,cex.lab=3,xaxt='n',lwd=5,lty=1)
+# lines(sigmagrid,thsigma,col='darkblue',lwd=3,lty=18)
 
 
 
@@ -255,4 +261,14 @@ acc_tau=sum(out_ls$acceptsTau/up)
 acc_mu_mu_chain2=sum(out_ls$accepts[[2]][,1]/up)
 acc_mu_sigma_chain2=sum(out_ls$accepts[[2]][,2]/up)
 
+#calculate posterior mean for mu
+n=length(y)
+y_bar           = mean(y)
+n*y_bar*((1*1^2)/(n*1*1^2+1))
+
+#calculate posterior mean for sigma2
+SSE                = SSEfun(y,1.409704) 
+d0                 = n/2+1
+v0                 = SSE/2+1
+(postmean          = v0/(d0-1))
 

@@ -14,14 +14,13 @@
 
 source('../Functions/ST_functions.R')
 source('ST_Galaxy_functions.R')
-#source('ST_Galaxy_runST.R')
 
 library(MASS)
 library(MCMCpack)
 library(truncnorm)
 
 
-set.seed(2555)
+
 t1=proc.time()[1]
 
 k1=3
