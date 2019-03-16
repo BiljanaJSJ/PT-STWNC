@@ -551,40 +551,23 @@ OptimizePars <- function(y,tau_prop,pars,PriorPars,parAdd=NULL, cl=NULL){
 	eps=10^-2
 	for (i in (2:N)){
 
-	         #Z_prop_max[[i]]	= matrix(0,dim(Z)[1],dim(Z)[2])
-	            # distances=t(sapply(1:k,function(x){ dnorm(y,max_means_prop[i-1,x],sqrt(max_sigma2_prop[i-1,x]))}))
-	            # ind=sapply(1:ncol(distances), function(x) {distances[,x] %in% min(distances[,x])})
-	            # Z_prop_max[[i]][ind]=1
 		    # #resample Z for the maximized means, sigma2 and p at tau_prop
-		 fmpij                  = mpij(y,means=max_means_prop[i-1,],sigma2=max_sigma2_prop[i-1,],p=p_max_prop[i-1,])
-		 pij                    = exp(fmpij)/apply(exp(fmpij),1,sum)
-                 #pij                    = t(exp(fmpij)/apply(exp(fmpij),1,sum))
-                 #ind                    = sapply(1:ncol(pij), function(x) {pij[,x] %in% max(pij[,x])})
-                 #Z_prop_max[[i]][ind]   = 1
-
+     	fmpij                  = mpij(y,means=max_means_prop[i-1,],sigma2=max_sigma2_prop[i-1,],p=p_max_prop[i-1,])
+		  pij                    = exp(fmpij)/apply(exp(fmpij),1,sum)
+      
 		  Z_prop_max[[i]]        = sampleZ(pij)
 		        
-	         Nk_prop[i,]            = apply(Z_prop_max[[i]],1,sum)
+	    Nk_prop[i,]            = apply(Z_prop_max[[i]],1,sum)
 		     
 		 # #resample Z for the maximized means, sigma2 and p at current tau
-                 #Z_it_max[[i]]    	= matrix(0,dim(Z)[1],dim(Z)[2])
+     
 		 fmpij                  = mpij(y,means=max_means_it[i-1,],sigma2=max_sigma2_it[i-1,],p=p_max_it[i-1,])
-		 #pij                    = t(exp(fmpij)/apply(exp(fmpij),1,sum))
-                 pij                    = exp(fmpij)/apply(exp(fmpij),1,sum)
+		 pij                    = exp(fmpij)/apply(exp(fmpij),1,sum)
 		 Z_it_max[[i]]          = sampleZ(pij)
-		 #ind                    = sapply(1:ncol(pij), function(x) {pij[,x] %in% max(pij[,x])})
-                 #Z_it_max[[i]][ind]     = 1
-
-
-		
-		#distances=t(sapply(1:k,function(x){ dnorm(y,max_means_it[i-1,x],sqrt(max_sigma2_it[i-1,x]))}))
-		#ind=sapply(1:ncol(distances), function(x) {distances[,x] %in% max(distances[,x])})
-		#Z_it_max[[i]][ind]=1
-		
 		
 		Nk_it[i,]              = apply(Z_it_max[[i]],1,sum)
-		# 
-		# 
+	
+		
 		# #maximize p for both proposed and current tau
 		p_max_prop[i,]         = Nk_prop[i,]/sum(Nk_prop[i,])
 		p_max_it[i,]           = Nk_it[i,]/sum(Nk_it[i,])

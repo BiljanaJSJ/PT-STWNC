@@ -34,24 +34,7 @@ dprior_mu=function(x,mean_mu=0,k=1,log=T){
   return(sum(dnorm(x,mean=mean_mu,sd=k,log=log)))
 }
 
-############################################################
-# logpriorSigma:Prior of Sigmas 
-# sigmas are distributed IG(priorpars[1],priorpars[2])
-# input:     x              - values at which prior of sigma2 is evaluated
-#            SigmaPriorPars - vector of shape and scale of the prior sigma2
-#            log            - whether log of the prior is evaluated, 
-#                             default is true
-#output:     prior of sigma2 evaluated at x
-############################################################
-#dprior_sig=function(x,SigmaPriorPars,log=T){
-#    if (log){
-#   ret=log(sum(dinvgamma(x,shape=SigmaPriorPars[1],scale=SigmaPriorPars[2])))
-#   }else{
-#   ret=sum(dinvgamma(x,shape=SigmaPriorPars[1],scale=SigmaPriorPars[2]))
-#   }
-#
-#   return(ret)
-#}
+
 
 #############################################################
 # loglik:  Tempered Likelihood is Gaussian
@@ -191,34 +174,7 @@ posterior_mu=function(y,tau,pars,PriorPars,log=T,parAdd=NULL){
   return(out_mu)
 }
 
-#####################################################################################
-#posterior_sig function 
-#evaluates the posterior 
-#        distribution of (mu/Y,tau)
-#input:  
-#         y           - univariate data
-#         tau         - value of tau
-#         pars        - vector of the sampled parameters, last element contains current tau 
-#         PriorPars   - priors for all of the parameters  
-#         parAdd      - a list of additional parameters, can be either sampled 
-#                       parameteres or additional parameters
-#output: evaluates the conditional posterior of sigma2
-#        distribution (sigma2 /Y,tau), given the input parameters
-#####################################################################################
 
-posterior_sig=function(y,tau,pars,PriorPars,log=T,parAdd=NULL){
-  
-  llik  = loglik(x=y,pars=pars,tau=tau,log=log)$out
-  pr_sig = dprior_sig(x=pars[2],SigmaPriorPars=PriorPars[3:4],log=log)
-  
-  if (log==T){ 
-    out_sig=llik+pr_sig
-  }else{
-    out_sig=llik*pr_sig
-  }
-  
-  return(out_sig)
-}
 #######################################################################
 # prior_tau: calculate the prior of tau
 # input:  
@@ -236,7 +192,6 @@ prior_tau=function(x,pars,PriorPars,tau,log=T,parAdd=NULL){
   
   llik=loglik(x,pars=pars,tau=tau,log=log)$out
   pr_mu=dprior_mu(x=pars[1],k=PriorPars[2],log=log)
-  #pr_sig = dprior_sig(x=pars[2],SigmaPriorPars=PriorPars[3:4],log=log)
   
   if (log==T){
     prior_t=-llik-pr_mu
@@ -267,7 +222,6 @@ posterior=function(y,pars,tau,log=T,PriorPars,par_max,parAdd=NULL){
   ptau  = prior_tau(y,pars=par_max,tau=tau,PriorPars=PriorPars,log=log)
   llik  = loglik(y,pars=pars,tau=tau,log=log)$out
   pr_mu = dprior_mu(x=pars[1],k=PriorPars[2],log=log)
-  #pr_sig= dprior_sig(x=pars[2],SigmaPriorPars=PriorPars[3:4],log=log)
   if (log==T){
     output=llik+pr_mu+ptau
   }else{
@@ -292,7 +246,6 @@ posterior_notau=function(y,pars,tau,log=T,PriorPars,parAdd=NULL){
 	
 	llik  = loglik(y,pars=pars,tau=tau,log=log)$out
 	pr_mu = dprior_mu(x=pars[1],k=PriorPars[2],log=log)
-	#pr_sig= dprior_sig(x=pars[2],SigmaPriorPars=PriorPars[3:4],log=log)
 	if (log==T){
 		output=llik+pr_mu
 	}else{
@@ -329,9 +282,7 @@ OptimizePars <- function(y,tau_prop,pars,PriorPars,parAdd=NULL,cl=NULL){
 	
 	N=10000
 	mu_prop=mu_it=rep(NA,N)
-#	max_sigma2_prop=max_sigma2_it=rep(NA,N)
 	mu_prop[1]=mu_it[1]=pars[1]
-#	max_sigma2_prop[1]=max_sigma2_it[1]=pars[2]
 	post_prop=post_it=rep(NA,N)
 	post_prop[1]=post_it[1]=0
 	

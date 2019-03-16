@@ -75,7 +75,7 @@ loglik = function(x,pars,tau,parAdd,log=T, mllik_eval=FALSE) {
         llik    = tau*(sum(dbinom(x,N,R/N,log=log))+dbinom(0,N,I[n]/N,log=log)+dbinom(1,N,I[n-1]/N,log=log))
         mllik    = NULL
         if (mllik_eval){
-             mllik   = sum(dbinom(x,N,R/N,log=log))+dbinom(0,N,I[n]/N,log=log)+dbinom(1,N,I[n-1]/N,log=log)
+        mllik   = sum(dbinom(x,N,R/N,log=log))+dbinom(0,N,I[n]/N,log=log)+dbinom(1,N,I[n-1]/N,log=log)
         }
   return(list(out=llik,mllik=mllik,R1=R1))
 }

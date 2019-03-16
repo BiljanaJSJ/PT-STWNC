@@ -1,9 +1,0 @@
-Calculate marginal likelihood using PT via STWNC
-
-
-calculatemllik_Sorting_combine.R - calcuate marginal likelhood
-
-
-
-
-

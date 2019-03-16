@@ -16,9 +16,9 @@
 #this script creates the plots from the paper
 
 library(coda)
-source('../Functions/ST_functions.r')
-source('filledContourFunction1.r')
-source('st_pants.R')
+source('../Functions/ST_functions.R')
+source('filledContourFunction1.R')
+source('ST_pants.r')
 #burn the first half of the iterations
 
 out_ls= get(load('ST50000.RData'))
@@ -40,7 +40,7 @@ traceplot(as.mcmc(out_ls$PT_chain[[1]][,3]))
 traceplot(as.mcmc(out_ls$PT_chain[[2]][,3]))
 ############################################################################################
 
-low=15000
+low=1000
 up=50000
 
 ############################################################################################
@@ -63,6 +63,7 @@ plot(mugrid,thmean)
 ############################################################################################
 
 
+
 ############################################################################################
 #calculate the theoretical mean of sigma2
 a=n/2+1
@@ -76,6 +77,7 @@ for (i in (1:1000)){
 
 plot(sigmagrid,thsigma)
 ############################################################################################
+
 
 
 
@@ -128,7 +130,7 @@ densGeom=density(c(GeomSamples, (-1)*GeomSamples,2-GeomSamples),from=0,to=1,n=nb
 #density estimates of mu and sig2
 densSg2=density(out_ls$PT_chain[[1]][low:up,2],adj=1.5,n=nbin)
 densSg2_1=density(out_ls$PT_chain[[2]][low:up,2],adj=1.2,n=nbin)
-chain2mu=density(out_ls$PT_chain[[2]][low:up,1],adj=0.3,n=nbin)
+chain2mu=density(out_ls$PT_chain[[2]][low:up,1],adj=0.5,n=nbin)
 chain1mu=density(out_ls$PT_chain[[1]][low:up,1],adj=1.15,n=nbin)
 
 
@@ -144,11 +146,11 @@ layout(matrix(c(1,2,3,4),2,2))
 par(oma=c(1.5,1.5,1.5,1.5),mar=c(5,5,5,5))
 
 #plot mu
-plot(chain1mu,col='darkgray',ylim=c(0,1),xlim=c(-2,2),xlab=expression(mu),ylab='Density',main=expression(mu),
+plot(chain1mu,col='darkgray',ylim=c(0,1.2),xlim=c(-2,2),xlab=expression(mu),ylab='Density',main=expression(mu),
      cex.main=3.5,cex.axis=3,cex.lab=3,lwd=3,lty=1)
 par(new=T)
 
-plot(chain2mu,col=rgb(1,0,0),ylim=c(0,1),xlim=c(-2,2),xlab='',ylab='',main=expression(mu),
+plot(chain2mu,col=rgb(1,0,0),ylim=c(0,1.2),xlim=c(-2,2),xlab='',ylab='',main=expression(mu),
      cex.main=3.5,cex.axis=3,cex.lab=3,lwd=6.5,lty=1)
 
 lines(mugrid,thmean,col='darkblue',lwd=3,lty=18)
@@ -156,11 +158,11 @@ lines(density(tPost), col='green',lwd=5,lty=33)
 
 
 #plot sig2
-plot(densSg2$x,densSg2$y,col='darkgray',xlim=c(0,10),ylim=c(0,1.5),xlab=expression(sigma^2),
+plot(densSg2$x,densSg2$y,col='darkgray',xlim=c(0,10),ylim=c(0,1.7),xlab=expression(sigma^2),
      ylab='Density',main=expression(sigma^2),cex.lab=3,cex.main=3.5,cex.axis=3,lwd=3,lty=1)
 
 par(new=T)
-plot(densSg2_1$x,densSg2_1$y,col=rgb(1,0,0),xlim=c(0,10),ylim=c(0,1.5),xlab='',
+plot(densSg2_1$x,densSg2_1$y,col=rgb(1,0,0),xlim=c(0,10),ylim=c(0,1.7),xlab='',
      ylab='',main=expression(sigma^2),cex.main=3.5,cex.axis=3,cex.lab=3,xaxt='n',lwd=5,lty=1)
 lines(sigmagrid,thsigma,col='darkblue',lwd=3,lty=18)
 
@@ -204,161 +206,6 @@ lines(densGeom$x,10^-0.5*densGeom$y,xlim=c(0,1),col='purple',lty=34,lwd=2,xlab='
 dev.off()
 
 
-############################################################################################
-
-#perspective and contour plots
-
-############################################################################################
-
-
-
-
-library(MASS)
-library(rgl)
-
-
-taugrid = seq(0.000001,1,length=100)
-mugrid  = seq(-4,4,length=100)
-#obtain kernel density estimate of the joint posterior distribution of (mu,tau)
-#by using reflected boundary condition for smoothing to avoid the edge effects of smoothing
-
-
-#stack together data sets [theta, tau], [theta, - tau] and [theta, 2- tau] 
-#use the reflected samples to obtain kernel density estimate
-#thus avoiding the edge effects
-
-tau_samples=out_ls$PT_chain[[1]][low:up,3]
-theta_samples=out_ls$PT_chain[[1]][low:up,1]
-
-tau_samples=c(tau_samples, (-1)*tau_samples,2-tau_samples)
-theta_samples=rep(theta_samples,3)
-
-#f1=get(load('f1.RData'))
-f1=kde2d(theta_samples,tau_samples,n=c(1000,1000))
-save(f1,file='f1.RData')
-
-
- nbcol = 50
- color = terrain.colors(nbcol)
- mycut = function(x, breaks) as.numeric(cut(x=x, breaks=breaks)) 
- zcol2 = as.numeric(apply(f1$z[,which(f1$y<1 & f1$y>0)],2, mycut, breaks=nbcol)) 
-
-
-#using rgl package create a perspective 3D plot of the joint posterior distribution
-#of (mu,tau)
-#par(mfrow=c(1,1))
-persp3d(f1$x,f1$y[which(f1$y<1 & f1$y>0)],f1$z[,which(f1$y<1 & f1$y>0)],
-       col = color[zcol2],xlab=expression(mu),
-       ylab=expression(tau),zlab="",main=bquote(paste("a.Perspective plot of the joint posterior of" ~ mu ,'and' ~ tau,sep='')))
-
-
-
-
-#codes for Greek letters in R are borrowed from http://stackoverflow.com/questions/27690729/greek-letters-symbols-and-line-breaks-inside-a-ggplot-legend-label
-
-#install.packages("extrafont")
-
-
-#jet.colors <- colorRampPalette( c("#cc0000","#ffcccc") ) 
-
-# Generate the desired number of colors from this palette
-#nbcol <- 100
-#color <- jet.colors(nbcol)
-
-nrz <- length(f1$x)
-ncz <- length(f1$y[which(f1$y<1 & f1$y>0)])
-zfacet <- f1$z[,which(f1$y<1 & f1$y>0)][-1, -1] + f1$z[,which(f1$y<1 & f1$y>0)][-1, -ncz] + f1$z[,which(f1$y<1 & f1$y>0)][-nrz, -1] + f1$z[,which(f1$y<1 & f1$y>0)][-nrz, -ncz]
-facetcol <- cut(zfacet, nbcol)
-
-
-library(extrafont)
-font_import()
-
-#create a contour plot of the respective perspective plot
-#pdf('Persp1.pdf',height = 9,width=9,family = 'serif')
-# png('Persp1.png',width=550,height = 484)
-# persp(f1$x,f1$y[which(f1$y<1 & f1$y>0)],f1$z[,which(f1$y<1 & f1$y>0)],expand=0.8,col= color[zcol2],
-#       xlab="\u03BC",ltheta = 130, shade = 0.4,border=NA,mgp=c(3,3,3),
-#       ylab="\n \u03c4",family = 'serif',ticktype='detailed',theta=-150,phi=0,zlab="",
-#       main=bquote(paste("A. Perspective plot of the joint posterior of " ~ mu ,' and ' ~ tau,sep='')),cex.axis=2,cex.lab=2,cex.main=2)
-# dev.off()
-
-#for the presentation
-#png('Persp1.png',width=550,height = 484)
-setEPS()
-postscript("FIG2.eps",horizontal=FALSE, paper="special",height=10,width=20, colormodel = "cmyk",
-           family='Helvetica')
-
-par(mfrow=c(1,2))
-#windows(family='serif')
-persp(f1$x,f1$y[which(f1$y<1 & f1$y>0)],f1$z[,which(f1$y<1 & f1$y>0)],expand=0.8,col= color[facetcol],
-      xlab="\u03BC",ltheta = 8, shade = 0.6,border=NA,mgp=c(3,3,3),
-      ylab="\u03c4",ticktype='detailed',theta=140,phi=0,zlab="",
-      main=bquote(paste("A. Perspective plot of the joint posterior of " ~ mu ,' and ' ~ tau,sep='')),cex.axis=2,cex.lab=2,cex.main=2.5)
-
-# persp(f1$x,f1$y[which(f1$y<1 & f1$y>0)],f1$z[,which(f1$y<1 & f1$y>0)],expand=0.8,col= color[facetcol],
-#       xlab="\u03BC",ltheta = 8, shade = 0.6,border=NA,mgp=c(3,3,3),
-#       ylab="\n \u03c4",ticktype='detailed',theta=-150,phi=0,zlab="",
-#       main=bquote(paste("A. Perspective plot of the joint posterior of " ~ mu ,' and ' ~ tau,sep='')),cex.axis=2,cex.lab=2,cex.main=2.5)
-
-#dev.off()
-
-
-#windows(family="Helvetica")
-#png('Contourplot.png',width=550,height = 484)
-#pdf('Contourplot.pdf',height = 9,width=9,points=12,family = 'serif')
-#filled.contour4(f1$x,f1$y[which(f1$y<1 & f1$y>0)],f1$z[,which(f1$y<1 & f1$y>0)],col=terrain.colors(10),nlevel=7,axes=F,xlim=c(-2.5,2.5),xlab=expression(mu),ylab=expression(tau),cex.axis=2,cex.lab=2,cex.main=2.5,family = 'serif',main=paste0('B. Contours of the joint posterior of \u03BC and \u03c4',sep=''))#, expression(mu),' and ',expression(tau),sep=''))
-filled.contour4(f1$x,f1$y[which(f1$y<1 & f1$y>0)],f1$z[,which(f1$y<1 & f1$y>0)],col=terrain.colors(10),nlevel=7,axes=F,xlim=c(-2.5,2.5),xlab=expression(mu),ylab=expression(tau),cex.axis=2,cex.lab=2,cex.main=2.5,main=bquote(paste("B. Contours of the joint posterior of " ~ mu ,' and ' ~ tau,sep='')))#, expression(mu),' and ',expression(tau),sep=''))
-#filled.contour4(f1$x,f1$y[which(f1$y<1 & f1$y>0)],f1$z[,which(f1$y<1 & f1$y>0)],col=terrain.colors(10),nlevel=7,axes=F,xlim=c(-2.5,2.5),xlab=expression(mu),ylab=expression(tau),cex.axis=2,cex.lab=2,cex.main=2.5,main=paste0('B. Contours of the joint posterior of \u03BC and \u03c4',sep=''))#, expression(mu),' and ',expression(tau),sep=''))
-contour(f1$x,f1$y[which(f1$y<1 & f1$y>0)],f1$z[,which(f1$y<1 & f1$y>0)],add=TRUE,nlevel=6,labcex=1)
-axis(2,seq(0,1,length=6),cex.axis=2,at=seq(0,1,length=6))
-axis(1,seq(-2,2,length=5),cex.axis=2,at=seq(-2,2,length=5))
-dev.off()
-
-
-break()
-############################################################################################
-#make some animations of the contour plot above
-#save the animated plots in the subfolder Animation_new
-############################################################################################
-setwd('D:/PhdProjects/PT_STWNC/SubmitCode/SubmitCode/Example1')
-animations=1:400 
-for (i in animations){
-  png(paste('Animation_new/Animation',i,'.png',sep=''),width=550,height = 484)
-  
-  filled.contour4(f1$x,f1$y[which(f1$y<1 & f1$y>0)],f1$z[,which(f1$y<1 & f1$y>0)],col=terrain.colors(10),nlevel=7,axes=F,xlim=c(-2.5,2.5),xlab=expression(mu),ylab=expression(tau),cex.axis=2,cex.lab=2,cex.main=2,family = 'serif',main=paste0('Contours of the joint posterior of \u03BC and \u03c4',sep=''))#, expression(mu),' and ',expression(tau),sep=''))
-  axis(2,seq(0,1,length=6),cex.axis=2,at=seq(0,1,length=6))
-  axis(1,seq(-2,2,length=5),cex.axis=2,at=seq(-2,2,length=5))
-  points(out_ls$PT_chain[[1]][1,1],out_ls$PT_chain[[1]][1,2])
-  
-  for (j in (1:i)){
-  points(out_ls$PT_chain[[1]][j,1],out_ls$PT_chain[[1]][j,2])
-  lines(out_ls$PT_chain[[1]][1:j,1],out_ls$PT_chain[[1]][1:j,2])
-  }
-  
-  dev.off()
-}
-library(animation)
-#to create a .gif animation type
-#system("convert  *.png PT-STWNC.gif")
-#in the cmd console directly
-
-
-############################################################################################
-#make new plots os sample paths
-#sample path plot of the two PT-STWTDNC chains
-#'tempered' chain is in 'black'
-#'target' chain is in 'red'
-############################################################################################
-#library(coda)
-pdf('smplpath.pdf',width=10,height=6)
-
-par(mfrow=c(1,1))
-chain=1
-plot(out_ls$PT_chain[[chain]][low:up,1],xlab='iterations',ylab='',main='Sampled paths of the two chains')
-chain=2
-points(out_ls$PT_chain[[chain]][low:up,1],col='red')
-dev.off()
 
 ############################################################################################
 
@@ -373,7 +220,7 @@ acfmean=acf(out_ls$PT_chain[[chain]][low:up,1][which(out_ls$PT_chain[[chain]][lo
 acfmean[which(acfmean<0.05)]=0
 acfmean=2*sum(acfmean)-1
 #standard error adjusted for autocorrelation of the posterior mean estimate of mu (the positive side)
-pos_mean_se=sqrt(var(out_ls$PT_chain[[chain]][low:up,1][which(out_ls$PT_chain[[chain]][low:up,1]>0)])/(up-low))*sqrt(acfmean)
+(pos_mean_se=sqrt(var(out_ls$PT_chain[[chain]][low:up,1][which(out_ls$PT_chain[[chain]][low:up,1]>0)])/(up-low))*sqrt(acfmean))
 
 #posterior mean of mu for the mode on the negative side
 (neg_mean=mean(out_ls$PT_chain[[chain]][low:up,1][which(out_ls$PT_chain[[chain]][low:up,1]<0)]))
@@ -382,7 +229,7 @@ acfmean=acf(out_ls$PT_chain[[chain]][low:up,1][which(out_ls$PT_chain[[chain]][lo
 acfmean[which(acfmean<0.05)]=0
 acfmean=2*sum(acfmean)-1
 #standard error adjusted for autocorrelation of the posterior mean estimate of mu (the negative side)
-neg_mean_se=sqrt(var(out_ls$PT_chain[[chain]][low:up,1][which(out_ls$PT_chain[[chain]][low:up,1]<0)])/(up-low))*sqrt(acfmean)
+(neg_mean_se=sqrt(var(out_ls$PT_chain[[chain]][low:up,1][which(out_ls$PT_chain[[chain]][low:up,1]<0)])/(up-low))*sqrt(acfmean))
 
 
 chain=2
@@ -393,7 +240,7 @@ acfsigma=acf(out_ls$PT_chain[[chain]][low:up,2])$acf
 acfsigma[which(acfsigma<0.05)]=0
 acfsigma=2*sum(acfsigma)-1
 #standard error adjusted for autocorrelation of the posterior mean estimate of sigma2
-sigma2_se=sqrt(var(out_ls$PT_chain[[chain]][low:up,1])/(up-low))*sqrt(acfsigma)
+(sigma2_se=sqrt(var(out_ls$PT_chain[[chain]][low:up,1])/(up-low))*sqrt(acfsigma))
 
 
 #marginal likelihood and acceptance rates

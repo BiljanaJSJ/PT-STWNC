@@ -12,17 +12,20 @@
 #                b.stojkova@stat.ubc.ca
 ####################################################################
 
-source('../Functions/ST_functions.r')
+source('../Functions/ST_functions.R')
 source("ST_pants.r")
 library(truncnorm)
-library(MASS)
+library("MASS")
 library(coda)
+library(MCMCpack)
+#library(LaplacesDemon)
+
+
 #generate data
 n=25
 p_mu=1.5
 sigma=1
-set.seed(1555)
-#set.seed(2500)
+set.seed(2555)
 
 y=data(n=n,mu=abs(p_mu),sigma=sigma)
 

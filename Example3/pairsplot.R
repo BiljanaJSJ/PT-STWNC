@@ -62,8 +62,6 @@ hist(out_ls$PT_chain[[1]][low:up,5],main=expression(tau),cex.axis=2.5,cex.main=3
 
 dev.off()
 
-#pdf('pairsplot_SIR.pdf',width=15,height=12,pointsize=15)
-#png('pairsplot_SIR.png',width = 1200,height = 700)
 setEPS()
 postscript("FIG5.eps",horizontal=FALSE, paper="special",height=15,width=19, colormodel = "cmyk", 
            family = "Helvetica")
@@ -93,15 +91,11 @@ str(out_ls)
    #plot of joint prior of alpha and beta compared to the joint posterior 
    #distribution of alpha and beta
 
-  # pdf('PriorPosteriorab.pdf',width = 9, height = 8)
-   #png('PriorPosteriorab.png',width=650,height=550)
    setEPS()
    postscript("FIG7.eps",horizontal=FALSE, paper="special",height=10,width=19, colormodel = "cmyk", 
               family = "Helvetica")
    par(mfrow=c(1,1), mar=c(4.5,6.4, 5.1, 5.1))
-   #oldpar=par(mfrow=c(1,2), mar=c(6.5,5.4, 4.1, 4.1))
    f1= kde2d(rgamma(500,shape=1,scale=1),rgamma(500,shape=1,scale=1))
-   #par(mfrow=c(1,1), oma=c(1,1,1,1))
    contour(f1$x,f1$y,f1$z,col='dimgrey',cex.axis=3)
 
    legend('topright', 
@@ -116,9 +110,9 @@ str(out_ls)
    layout(matrix(1:4,2))
    plot(out_ls$PT_chain[[chain]][low:up,2],out_ls$PT_chain[[chain]][low:up,1],col='red',xlab=expression(alpha),ylab=expression(beta),main='Posterior (zoomed in)',cex.main=4,cex=3,cex.lab=2.5,cex.axis=2.5)
    dev.off()
-   #layout(matrix(1:2,ncol=2))
-   #pdf('PriorI0.pdf',width = 9, height = 8)
-   #png('PriorI0.png',width=650,height=550)
+ 
+   
+   
    setEPS()
    postscript("FIG8.eps",horizontal=FALSE, paper="special",height=10,width=19, colormodel = "cmyk", 
               family = "Helvetica")

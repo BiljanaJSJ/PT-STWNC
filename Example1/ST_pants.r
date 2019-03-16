@@ -43,14 +43,14 @@ dprior_mu=function(x,mean_mu=0,k=1,log=T){
 dprior_sig=function(x,SigmaPriorPars,log=T){
 
    if (log){
-   ret=log(sum(dinvgamma(x,shape=SigmaPriorPars[1],scale=SigmaPriorPars[2])))
+   ret=log(dinvgamma(x,shape=SigmaPriorPars[1],scale=SigmaPriorPars[2]))
    }else{
-   ret=sum(dinvgamma(x,shape=SigmaPriorPars[1],scale=SigmaPriorPars[2]))
+   ret=dinvgamma(x,shape=SigmaPriorPars[1],scale=SigmaPriorPars[2])
    }
 
    return(ret)
 
-   #return(sum(dgamma(1/x,shape=SigmaPriorPars[1]+2,scale=1/SigmaPriorPars[2],log=log)))
+ 
 }
 
 #############################################################
@@ -152,8 +152,7 @@ STstep_pars = function(pars,tau,y=y,log_r_bot=NA,acc=accepts,
     # accept the move
     acc[1]  = acc[1]+1;
     pars[1] = mu_prop;
-    #log_r_bot_mu = log_r_top_mu;
-    
+
    }
     
    #propose sigma2 from lognormal
@@ -178,7 +177,6 @@ STstep_pars = function(pars,tau,y=y,log_r_bot=NA,acc=accepts,
      # accept the move
      acc[2]=acc[2]+1;
      pars[2] = sig_prop;
-     #log_r_bot_sig = log_r_top_sig;
      
    }
    log_r_bot=posterior_notau(y=y,pars=pars,tau=tau,log=T,PriorPars=PriorPars)$output
