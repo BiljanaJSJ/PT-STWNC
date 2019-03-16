@@ -113,7 +113,7 @@ tau_int           = diff(uniqueTau)
 library(doParallel)
 cl <- makeCluster(4)
 registerDoParallel(cl)
-clusterCall(cl,function(x) {source("ST_pants.r")})
+clusterCall(cl,function(x) {source("../ST_pants.r")})
 clusterExport(cl,varlist=ls())
 
 indicesUniqueTau  = parLapply(cl,1:length(uniqueTau),function(x){ which(tau_samples==uniqueTau[x]) })
