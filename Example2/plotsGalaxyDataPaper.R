@@ -13,7 +13,7 @@
 #                b.stojkova@stat.ubc.ca
 ####################################################################
 
-#setwd('D:/PhdProjects/PT_STWNC/SubmitCode/SubmitCode/Example2')
+
 
 
 
